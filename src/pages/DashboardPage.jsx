@@ -123,44 +123,99 @@ export default function DashboardPage({ user, onLogout }) {
           <div className="mb-5 bg-red-50 border border-red-100 text-red-700 rounded-2xl px-4 py-3 text-sm">{error}</div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-          {stats.map((stat) => (
-            <StatCard key={stat.title} {...stat} />
-          ))}
-        </div>
+{activeSection === 'dashboard' ? (
+  <>
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+      {stats.map((stat) => (
+        <StatCard key={stat.title} {...stat} />
+      ))}
+    </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 mb-6">
-          <div className="xl:col-span-6">
-            {loading ? <LoadingCard text="جاري تحميل الرسم البياني..." /> : (
-              <BookingsBarChart labels={chartsData.labels} values={chartsData.values} capacity={chartsData.capacity} />
-            )}
-          </div>
-          <div className="xl:col-span-3">
-            {loading ? <LoadingCard text="جاري تحميل الإشغال..." /> : (
-              <OccupancyDonutChart occupied={occupancy.occupied} available={occupancy.available} maintenance={occupancy.maintenance} />
-            )}
-          </div>
-          <div className="xl:col-span-3">
-            {loading ? <LoadingCard text="جاري تحميل نقاط التفتيش..." /> : (
-              <CheckpointStatusCard points={scanPoints} />
-            )}
-          </div>
-        </div>
+    <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 mb-6">
+      <div className="xl:col-span-6">
+        {loading ? (
+          <LoadingCard text="جاري تحميل الرسم البياني..." />
+        ) : (
+          <BookingsBarChart
+            labels={chartsData.labels}
+            values={chartsData.values}
+            capacity={chartsData.capacity}
+          />
+        )}
+      </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-          <div className="xl:col-span-7">
-            {loading ? <LoadingCard text="جاري تحميل آخر عمليات المسح..." /> : (
-              <LatestScansTable scans={scans} />
-            )}
-          </div>
-          <div className="xl:col-span-5">
-            {loading ? <LoadingCard text="جاري تحميل التنبيهات..." /> : (
-              <NotificationsCard notifications={notifications} />
-            )}
-          </div>
-        </div>
+      <div className="xl:col-span-3">
+        {loading ? (
+          <LoadingCard text="جاري تحميل الإشغال..." />
+        ) : (
+          <OccupancyDonutChart
+            occupied={occupancy.occupied}
+            available={occupancy.available}
+            maintenance={occupancy.maintenance}
+          />
+        )}
+      </div>
 
-        <div className="text-center text-slate-500 text-sm mt-8">© رصيف بلس — جميع الحقوق محفوظة</div>
+      <div className="xl:col-span-3">
+        {loading ? (
+          <LoadingCard text="جاري تحميل نقاط التفتيش..." />
+        ) : (
+          <CheckpointStatusCard points={scanPoints} />
+        )}
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+      <div className="xl:col-span-7">
+        {loading ? (
+          <LoadingCard text="جاري تحميل آخر عمليات المسح..." />
+        ) : (
+          <LatestScansTable scans={scans} />
+        )}
+      </div>
+
+      <div className="xl:col-span-5">
+        {loading ? (
+          <LoadingCard text="جاري تحميل التنبيهات..." />
+        ) : (
+          <NotificationsCard notifications={notifications} />
+        )}
+      </div>
+    </div>
+  </>
+) : activeSection === 'bookings' ? (
+  <BookingsPage />
+) : activeSection === 'trips' ? (
+  <TripsPage />
+) : activeSection === 'containers' ? (
+  <ContainersPage />
+) : activeSection === 'reports' ? (
+  <ReportsPage />
+) : activeSection === 'users' ? (
+  <UsersPage />
+) : activeSection === 'trucks' ? (
+  <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
+    <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة الشاحنات</h2>
+    <p className="text-slate-500">يمكن إضافتها لاحقًا بربطها مع API خاصة بالشاحنات.</p>
+  </div>
+) : activeSection === 'ships' ? (
+  <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
+    <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة السفن</h2>
+    <p className="text-slate-500">يمكن إضافتها لاحقًا بربطها مع API خاصة بالسفن.</p>
+  </div>
+) : activeSection === 'checkpoints' ? (
+  <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
+    <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة نقاط التفتيش</h2>
+    <p className="text-slate-500">يمكن تطويرها لاحقًا لإدارة النقاط وتغيير حالتها.</p>
+  </div>
+) : activeSection === 'settings' ? (
+  <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
+    <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة الإعدادات</h2>
+    <p className="text-slate-500">يمكن إضافة إعدادات النظام والواجهة لاحقًا.</p>
+  </div>
+) : null}
+
+        <div className="text-center text-slate-500 text-sm mt-8">© تطوير : مهند السعدي — جميع الحقوق محفوظة</div>
       </main>
     </div>
   );
