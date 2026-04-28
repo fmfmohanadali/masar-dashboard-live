@@ -17,7 +17,9 @@ export default function SettingsPage({ user }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
           <div className="text-sm text-slate-500 mb-2">رابط الـ API</div>
-          <div className="text-lg font-bold text-slate-900 break-all">{apiBase}</div>
+          <div className="text-lg font-bold text-slate-900 break-all">
+            {apiBase}
+          </div>
         </div>
 
         <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">

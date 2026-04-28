@@ -14,6 +14,7 @@ export default function UsersPage() {
     async function load() {
       setLoading(true);
       setError('');
+
       try {
         const res = await api.get('/auth/me/');
         if (!mounted) return;
@@ -28,7 +29,10 @@ export default function UsersPage() {
     }
 
     load();
-    return () => { mounted = false; };
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
@@ -58,17 +62,23 @@ export default function UsersPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
             <div className="text-sm text-slate-500 mb-2">اسم المستخدم</div>
-            <div className="text-2xl font-black text-slate-900">{user?.username || '-'}</div>
+            <div className="text-2xl font-black text-slate-900">
+              {user?.username || '-'}
+            </div>
           </div>
 
           <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
             <div className="text-sm text-slate-500 mb-2">الدور</div>
-            <div className="text-2xl font-black text-slate-900">{user?.profile?.role || '-'}</div>
+            <div className="text-2xl font-black text-slate-900">
+              {user?.profile?.role || '-'}
+            </div>
           </div>
 
           <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
             <div className="text-sm text-slate-500 mb-2">البريد الإلكتروني</div>
-            <div className="text-xl font-bold text-slate-900">{user?.email || '-'}</div>
+            <div className="text-xl font-bold text-slate-900">
+              {user?.email || '-'}
+            </div>
           </div>
 
           <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
