@@ -15,6 +15,10 @@ import TripsPage from './TripsPage';
 import ContainersPage from './ContainersPage';
 import ReportsPage from './ReportsPage';
 import UsersPage from './UsersPage';
+import TrucksPage from './TrucksPage';
+import ShipsPage from './ShipsPage';
+import CheckpointsPage from './CheckpointsPage';
+import SettingsPage from './SettingsPage';
 
 export default function DashboardPage({ user, onLogout }) {
   const [summary, setSummary] = useState(null);

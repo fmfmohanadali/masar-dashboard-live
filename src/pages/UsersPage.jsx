@@ -79,9 +79,9 @@ export default function UsersPage() {
           </div>
 
           <div className="md:col-span-2 bg-blue-50 border border-blue-100 rounded-[22px] p-5 text-slate-700">
-            إدارة المستخدمين الكاملة (إضافة / حذف / تعديل الأدوار) تتم حاليًا من خلال
+            إدارة المستخدمين الكاملة (إضافة / حذف / تعديل الأدوار) تتم حاليًا عبر
             <span className="font-bold"> Django Admin </span>
-            إلى أن يتم توفير API خاصة بالمستخدمين داخل الـ Dashboard.
+            إلى أن يتم توفير API مستقلة للمستخدمين داخل الـ Dashboard.
           </div>
         </div>
       )}
