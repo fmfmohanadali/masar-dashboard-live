@@ -1,17 +1,16 @@
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-
-ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function OccupancyDonutChart({ occupied = 64, available = 24, maintenance = 12 }) {
   const data = {
     labels: ['محجوز', 'متاح', 'صيانة'],
-    datasets: [{
-      data: [occupied, available, maintenance],
-      backgroundColor: ['#2f74d0', '#2db85d', '#f59e0b'],
-      borderWidth: 0,
-      cutout: '72%',
-    }],
+    datasets: [
+      {
+        data: [occupied, available, maintenance],
+        backgroundColor: ['#2f74d0', '#2db85d', '#f59e0b'],
+        borderWidth: 0,
+        cutout: '72%',
+      },
+    ],
   };
 
   const options = {

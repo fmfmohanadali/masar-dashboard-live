@@ -1,25 +1,17 @@
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend,
-} from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend);
+export default function BookingsBarChart({ labels = [], values = [], capacity = [] }) {
+  const safeLabels = Array.isArray(labels) ? labels : [];
+  const safeValues = Array.isArray(values) ? values : [];
+  const safeCapacity = Array.isArray(capacity) ? capacity : [];
 
-export default function BookingsBarChart({ labels, values, capacity }) {
   const data = {
-    labels,
+    labels: safeLabels,
     datasets: [
       {
         type: 'bar',
         label: 'الحجوزات',
-        data: values,
+        data: safeValues,
         backgroundColor: '#2f74d0',
         borderRadius: 8,
         maxBarThickness: 28,
@@ -27,7 +19,7 @@ export default function BookingsBarChart({ labels, values, capacity }) {
       {
         type: 'line',
         label: 'السعة المتاحة',
-        data: capacity,
+        data: safeCapacity,
         borderColor: '#b3bcc8',
         borderWidth: 2,
         pointRadius: 0,
@@ -50,7 +42,9 @@ export default function BookingsBarChart({ labels, values, capacity }) {
           boxHeight: 8,
         },
       },
-      tooltip: { rtl: true },
+      tooltip: {
+        rtl: true,
+      },
     },
     scales: {
       x: {
@@ -72,3 +66,4 @@ export default function BookingsBarChart({ labels, values, capacity }) {
     </div>
   );
 }
+``
