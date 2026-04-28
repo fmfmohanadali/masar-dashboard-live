@@ -215,31 +215,19 @@ export default function DashboardPage({ user, onLogout }) {
           <TripsPage />
         ) : activeSection === 'containers' ? (
           <ContainersPage />
-        ) : activeSection === 'reports' ? (
-          <ReportsPage />
-        ) : activeSection === 'users' ? (
-          <UsersPage />
-        ) : activeSection === 'trucks' ? (
-          <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
-            <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة الشاحنات</h2>
-            <p className="text-slate-500">يمكن إضافتها لاحقًا بربطها مع API خاصة بالشاحنات.</p>
-          </div>
-        ) : activeSection === 'ships' ? (
-          <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
-            <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة السفن</h2>
-            <p className="text-slate-500">يمكن إضافتها لاحقًا بربطها مع API خاصة بالسفن.</p>
-          </div>
-        ) : activeSection === 'checkpoints' ? (
-          <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
-            <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة نقاط التفتيش</h2>
-            <p className="text-slate-500">يمكن تطويرها لاحقًا لإدارة النقاط وتغيير حالتها.</p>
-          </div>
-        ) : activeSection === 'settings' ? (
-          <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
-            <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة الإعدادات</h2>
-            <p className="text-slate-500">يمكن إضافة إعدادات النظام والواجهة لاحقًا.</p>
-          </div>
-        ) : null}
+) : activeSection === 'reports' ? (
+  <ReportsPage />
+) : activeSection === 'users' ? (
+  <UsersPage />
+) : activeSection === 'trucks' ? (
+  <TrucksPage />
+) : activeSection === 'ships' ? (
+  <ShipsPage />
+) : activeSection === 'checkpoints' ? (
+  <CheckpointsPage />
+) : activeSection === 'settings' ? (
+  <SettingsPage user={user} />
+) : null}
 
         <div className="text-center text-slate-500 text-sm mt-8">
           © تطوير : مهند السعدي — جميع الحقوق محفوظة
