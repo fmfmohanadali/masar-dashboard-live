@@ -10,6 +10,11 @@ import CheckpointStatusCard from '../components/CheckpointStatusCard';
 import LatestScansTable from '../components/LatestScansTable';
 import NotificationsCard from '../components/NotificationsCard';
 import LoadingCard from '../components/LoadingCard';
+import BookingsPage from './BookingsPage';
+import TripsPage from './TripsPage';
+import ContainersPage from './ContainersPage';
+import ReportsPage from './ReportsPage';
+import UsersPage from './UsersPage';
 
 export default function DashboardPage({ user, onLogout }) {
   const [summary, setSummary] = useState(null);
