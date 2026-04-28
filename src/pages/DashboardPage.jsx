@@ -23,12 +23,15 @@ export default function DashboardPage({ user, onLogout }) {
   const [scanPoints, setScanPoints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeSection, setActiveSection] = useState('dashboard');
 
   useEffect(() => {
     let mounted = true;
+
     async function load() {
       setLoading(true);
       setError('');
+
       try {
         const [summaryRes, notificationsRes, scansRes, scanPointsRes] = await Promise.all([
           api.get('/dashboard/summary/'),
@@ -38,6 +41,7 @@ export default function DashboardPage({ user, onLogout }) {
         ]);
 
         if (!mounted) return;
+
         setSummary(summaryRes.data);
         setNotifications(notificationsRes.data.results || notificationsRes.data || []);
         const scanList = scansRes.data.results || scansRes.data || [];
@@ -50,13 +54,22 @@ export default function DashboardPage({ user, onLogout }) {
         if (mounted) setLoading(false);
       }
     }
+
     load();
-    return () => { mounted = false; };
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const chartsData = useMemo(() => {
     const labels = ['00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00','24:00'];
-    const base = labels.map((_, i) => Math.max(0, Math.round((summary?.total_trips || 0) * ([0.03,0.05,0.07,0.12,0.18,0.23,0.28,0.20,0.19,0.16,0.10,0.06,0.03][i]))));
+    const base = labels.map((_, i) =>
+      Math.max(
+        0,
+        Math.round((summary?.total_trips || 0) * ([0.03,0.05,0.07,0.12,0.18,0.23,0.28,0.20,0.19,0.16,0.10,0.06,0.03][i]))
+      )
+    );
     const capacity = labels.map((_, i) => Math.max(base[i] + 10, 20));
     return { labels, values: base, capacity };
   }, [summary]);
@@ -108,114 +121,125 @@ export default function DashboardPage({ user, onLogout }) {
 
   return (
     <div className="min-h-screen bg-soft flex flex-row-reverse">
-      <Sidebar onLogout={onLogout} />
+      <Sidebar
+        onLogout={onLogout}
+        activeKey={activeSection}
+        onNavigate={setActiveSection}
+      />
 
       <main className="flex-1 p-6 lg:p-8 overflow-hidden">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
           <Topbar user={user} notificationCount={notifications.length} />
-          <button className="hidden lg:inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-3 rounded-2xl shadow-soft hover:bg-blue-700 transition">
+          <button
+            onClick={() => window.print()}
+            className="hidden lg:inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-3 rounded-2xl shadow-soft hover:bg-blue-700 transition"
+          >
             <Download size={18} />
             تصدير تقرير
           </button>
         </div>
 
         {error && (
-          <div className="mb-5 bg-red-50 border border-red-100 text-red-700 rounded-2xl px-4 py-3 text-sm">{error}</div>
+          <div className="mb-5 bg-red-50 border border-red-100 text-red-700 rounded-2xl px-4 py-3 text-sm">
+            {error}
+          </div>
         )}
 
-{activeSection === 'dashboard' ? (
-  <>
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-      {stats.map((stat) => (
-        <StatCard key={stat.title} {...stat} />
-      ))}
-    </div>
+        {activeSection === 'dashboard' ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+              {stats.map((stat) => (
+                <StatCard key={stat.title} {...stat} />
+              ))}
+            </div>
 
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 mb-6">
-      <div className="xl:col-span-6">
-        {loading ? (
-          <LoadingCard text="جاري تحميل الرسم البياني..." />
-        ) : (
-          <BookingsBarChart
-            labels={chartsData.labels}
-            values={chartsData.values}
-            capacity={chartsData.capacity}
-          />
-        )}
-      </div>
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 mb-6">
+              <div className="xl:col-span-6">
+                {loading ? (
+                  <LoadingCard text="جاري تحميل الرسم البياني..." />
+                ) : (
+                  <BookingsBarChart
+                    labels={chartsData.labels}
+                    values={chartsData.values}
+                    capacity={chartsData.capacity}
+                  />
+                )}
+              </div>
 
-      <div className="xl:col-span-3">
-        {loading ? (
-          <LoadingCard text="جاري تحميل الإشغال..." />
-        ) : (
-          <OccupancyDonutChart
-            occupied={occupancy.occupied}
-            available={occupancy.available}
-            maintenance={occupancy.maintenance}
-          />
-        )}
-      </div>
+              <div className="xl:col-span-3">
+                {loading ? (
+                  <LoadingCard text="جاري تحميل الإشغال..." />
+                ) : (
+                  <OccupancyDonutChart
+                    occupied={occupancy.occupied}
+                    available={occupancy.available}
+                    maintenance={occupancy.maintenance}
+                  />
+                )}
+              </div>
 
-      <div className="xl:col-span-3">
-        {loading ? (
-          <LoadingCard text="جاري تحميل نقاط التفتيش..." />
-        ) : (
-          <CheckpointStatusCard points={scanPoints} />
-        )}
-      </div>
-    </div>
+              <div className="xl:col-span-3">
+                {loading ? (
+                  <LoadingCard text="جاري تحميل نقاط التفتيش..." />
+                ) : (
+                  <CheckpointStatusCard points={scanPoints} />
+                )}
+              </div>
+            </div>
 
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-      <div className="xl:col-span-7">
-        {loading ? (
-          <LoadingCard text="جاري تحميل آخر عمليات المسح..." />
-        ) : (
-          <LatestScansTable scans={scans} />
-        )}
-      </div>
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+              <div className="xl:col-span-7">
+                {loading ? (
+                  <LoadingCard text="جاري تحميل آخر عمليات المسح..." />
+                ) : (
+                  <LatestScansTable scans={scans} />
+                )}
+              </div>
 
-      <div className="xl:col-span-5">
-        {loading ? (
-          <LoadingCard text="جاري تحميل التنبيهات..." />
-        ) : (
-          <NotificationsCard notifications={notifications} />
-        )}
-      </div>
-    </div>
-  </>
-) : activeSection === 'bookings' ? (
-  <BookingsPage />
-) : activeSection === 'trips' ? (
-  <TripsPage />
-) : activeSection === 'containers' ? (
-  <ContainersPage />
-) : activeSection === 'reports' ? (
-  <ReportsPage />
-) : activeSection === 'users' ? (
-  <UsersPage />
-) : activeSection === 'trucks' ? (
-  <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
-    <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة الشاحنات</h2>
-    <p className="text-slate-500">يمكن إضافتها لاحقًا بربطها مع API خاصة بالشاحنات.</p>
-  </div>
-) : activeSection === 'ships' ? (
-  <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
-    <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة السفن</h2>
-    <p className="text-slate-500">يمكن إضافتها لاحقًا بربطها مع API خاصة بالسفن.</p>
-  </div>
-) : activeSection === 'checkpoints' ? (
-  <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
-    <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة نقاط التفتيش</h2>
-    <p className="text-slate-500">يمكن تطويرها لاحقًا لإدارة النقاط وتغيير حالتها.</p>
-  </div>
-) : activeSection === 'settings' ? (
-  <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
-    <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة الإعدادات</h2>
-    <p className="text-slate-500">يمكن إضافة إعدادات النظام والواجهة لاحقًا.</p>
-  </div>
-) : null}
+              <div className="xl:col-span-5">
+                {loading ? (
+                  <LoadingCard text="جاري تحميل التنبيهات..." />
+                ) : (
+                  <NotificationsCard notifications={notifications} />
+                )}
+              </div>
+            </div>
+          </>
+        ) : activeSection === 'bookings' ? (
+          <BookingsPage />
+        ) : activeSection === 'trips' ? (
+          <TripsPage />
+        ) : activeSection === 'containers' ? (
+          <ContainersPage />
+        ) : activeSection === 'reports' ? (
+          <ReportsPage />
+        ) : activeSection === 'users' ? (
+          <UsersPage />
+        ) : activeSection === 'trucks' ? (
+          <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
+            <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة الشاحنات</h2>
+            <p className="text-slate-500">يمكن إضافتها لاحقًا بربطها مع API خاصة بالشاحنات.</p>
+          </div>
+        ) : activeSection === 'ships' ? (
+          <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
+            <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة السفن</h2>
+            <p className="text-slate-500">يمكن إضافتها لاحقًا بربطها مع API خاصة بالسفن.</p>
+          </div>
+        ) : activeSection === 'checkpoints' ? (
+          <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
+            <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة نقاط التفتيش</h2>
+            <p className="text-slate-500">يمكن تطويرها لاحقًا لإدارة النقاط وتغيير حالتها.</p>
+          </div>
+        ) : activeSection === 'settings' ? (
+          <div className="bg-white rounded-[22px] p-10 shadow-soft border border-slate-100 text-center">
+            <h2 className="text-2xl font-black text-slate-900 mb-3">صفحة الإعدادات</h2>
+            <p className="text-slate-500">يمكن إضافة إعدادات النظام والواجهة لاحقًا.</p>
+          </div>
+        ) : null}
 
-        <div className="text-center text-slate-500 text-sm mt-8">© تطوير : مهند السعدي — جميع الحقوق محفوظة</div>
+        <div className="text-center text-slate-500 text-sm mt-8">
+          © تطوير : مهند السعدي — جميع الحقوق محفوظة
+        </div>
       </main>
     </div>
   );
