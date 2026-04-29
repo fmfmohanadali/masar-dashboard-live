@@ -1,5 +1,6 @@
 import { Download } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 
 import Sidebar from '../components/Sidebar';
@@ -29,7 +30,48 @@ export default function DashboardPage({ user, onLogout }) {
   const [scanPoints, setScanPoints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeSection, setActiveSection] = useState('dashboard');
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const pathToSection = useMemo(
+    () => ({
+      '/dashboard': 'dashboard',
+      '/bookings': 'bookings',
+      '/trips': 'trips',
+      '/containers': 'containers',
+      '/trucks': 'trucks',
+      '/ships': 'ships',
+      '/checkpoints': 'checkpoints',
+      '/reports': 'reports',
+      '/users': 'users',
+      '/settings': 'settings',
+    }),
+    []
+  );
+
+  const sectionToPath = useMemo(
+    () => ({
+      dashboard: '/dashboard',
+      bookings: '/bookings',
+      trips: '/trips',
+      containers: '/containers',
+      trucks: '/trucks',
+      ships: '/ships',
+      checkpoints: '/checkpoints',
+      reports: '/reports',
+      users: '/users',
+      settings: '/settings',
+    }),
+    []
+  );
+
+  const activeSection = pathToSection[location.pathname] || 'dashboard';
+
+  function handleNavigate(sectionKey) {
+    const target = sectionToPath[sectionKey] || '/dashboard';
+    navigate(target);
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -303,7 +345,7 @@ export default function DashboardPage({ user, onLogout }) {
       <Sidebar
         onLogout={onLogout}
         activeKey={activeSection}
-        onNavigate={setActiveSection}
+        onNavigate={handleNavigate}
       />
 
       <main className="flex-1 p-6 lg:p-8 overflow-hidden">
