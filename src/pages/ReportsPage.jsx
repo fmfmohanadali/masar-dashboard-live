@@ -40,7 +40,15 @@ export default function ReportsPage() {
   return (
     <PageShell
       title="التقارير"
-      subtitle="تقرير الدوران وعرض البيانات التحليلية"
+      subtitle="عرض تقرير الدوران والبيانات التحليلية"
+      actions={
+        <button
+          onClick={() => window.print()}
+          className="bg-brand text-white px-4 py-3 rounded-2xl"
+        >
+          طباعة التقرير
+        </button>
+      }
     >
       {error ? (
         <div className="bg-red-50 border border-red-100 text-red-700 rounded-2xl px-4 py-3 text-sm">
