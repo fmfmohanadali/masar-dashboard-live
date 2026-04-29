@@ -41,7 +41,12 @@ export default function SettingsPage({ user }) {
 
         <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
           <div className="text-sm text-slate-500 mb-4">إدارة النظام</div>
-          https://masar-backend-oxnm.onrender.com/admin/
+          <a
+            href="https://masar-backend-oxnm.onrender.com/admin/"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex bg-brand text-white px-4 py-3 rounded-2xl"
+          >
             فتح لوحة Django Admin
           </a>
         </div>
