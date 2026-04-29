@@ -11,21 +11,22 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 
 const sidebarItems = [
-  { key: 'dashboard', label: 'الرئيسية', icon: Home },
-  { key: 'bookings', label: 'الحجوزات', icon: CalendarDays },
-  { key: 'trips', label: 'الرحلات', icon: Route },
-  { key: 'containers', label: 'الحاويات', icon: Package },
-  { key: 'trucks', label: 'الشاحنات', icon: Truck },
-  { key: 'ships', label: 'السفن', icon: Ship },
-  { key: 'checkpoints', label: 'نقاط التفتيش', icon: ShieldCheck },
-  { key: 'reports', label: 'التقارير', icon: BarChart3 },
-  { key: 'users', label: 'المستخدمون', icon: Users },
-  { key: 'settings', label: 'الإعدادات', icon: Settings },
+  { to: '/dashboard', label: 'الرئيسية', icon: Home },
+  { to: '/bookings', label: 'الحجوزات', icon: CalendarDays },
+  { to: '/trips', label: 'الرحلات', icon: Route },
+  { to: '/containers', label: 'الحاويات', icon: Package },
+  { to: '/trucks', label: 'الشاحنات', icon: Truck },
+  { to: '/ships', label: 'السفن', icon: Ship },
+  { to: '/checkpoints', label: 'نقاط التفتيش', icon: ShieldCheck },
+  { to: '/reports', label: 'التقارير', icon: BarChart3 },
+  { to: '/users', label: 'المستخدمون', icon: Users },
+  { to: '/settings', label: 'الإعدادات', icon: Settings },
 ];
 
-export default function Sidebar({ onLogout, activeKey, onNavigate }) {
+export default function Sidebar({ onLogout }) {
   return (
     <aside className="w-72 shrink-0 bg-[#08203d] text-white min-h-screen p-5 flex flex-col">
       <div className="flex items-center gap-3 mb-8">
@@ -42,22 +43,23 @@ export default function Sidebar({ onLogout, activeKey, onNavigate }) {
       <nav className="space-y-1 flex-1">
         {sidebarItems.map((item) => {
           const Icon = item.icon;
-          const active = activeKey === item.key;
 
           return (
-            <button
-              key={item.key}
-              onClick={() => onNavigate(item.key)}
-              className={[
-                'w-full flex items-center justify-between rounded-2xl px-4 py-3 transition',
-                active
-                  ? 'bg-blue-600 shadow-soft'
-                  : 'hover:bg-white/5 text-blue-50/90',
-              ].join(' ')}
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                [
+                  'w-full flex items-center justify-between rounded-2xl px-4 py-3 transition',
+                  isActive
+                    ? 'bg-blue-600 shadow-soft'
+                    : 'hover:bg-white/5 text-blue-50/90',
+                ].join(' ')
+              }
             >
               <span className="font-medium">{item.label}</span>
               <Icon size={18} />
-            </button>
+            </NavLink>
           );
         })}
       </nav>
