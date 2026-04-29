@@ -34,7 +34,7 @@ export default function Sidebar({ onLogout, activeKey, onNavigate }) {
         </div>
 
         <div>
-          <div className="font-bold text-lg">رصيف بلس</div>
+          <div className="font-bold text-lg">مسار بلس</div>
           <div className="text-xs text-blue-100/70">إدارة الميناء</div>
         </div>
       </div>
