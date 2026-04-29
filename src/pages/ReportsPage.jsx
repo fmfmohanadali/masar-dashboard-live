@@ -7,6 +7,7 @@ export default function ReportsPage() {
   const [rows, setRows] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [debugInfo, setDebugInfo] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -14,22 +15,49 @@ export default function ReportsPage() {
     async function load() {
       setLoading(true);
       setError('');
+      setDebugInfo('');
+
       try {
         const res = await api.get('/turnaround-report/');
         if (!mounted) return;
+
         const data = res.data?.results || res.data || [];
-        setRows(Array.isArray(data) ? data : []);
+        if (Array.isArray(data)) {
+          setRows(data);
+          if (!data.length) {
+            setDebugInfo('تم الوصول إلى endpoint بنجاح لكن لا توجد بيانات تقرير حالياً.');
+          }
+        } else {
+          setRows([]);
+          setDebugInfo('الـ API رجعت بيانات لكن ليست بصيغة قائمة Array.');
+        }
       } catch (err) {
         if (!mounted) return;
-        setError(err?.response?.data?.detail || 'تعذر تحميل التقارير');
+
+        console.error('turnaround-report error:', err);
+
+        const detail =
+          err?.response?.data?.detail ||
+          err?.response?.statusText ||
+          err?.message ||
+          'تعذر تحميل التقارير';
+
+        setError(detail);
         setRows([]);
+
+        setDebugInfo(
+          `HTTP Status: ${err?.response?.status || 'غير معروف'}`
+        );
       } finally {
         if (mounted) setLoading(false);
       }
     }
 
     load();
-    return () => { mounted = false; };
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const columns = useMemo(() => {
@@ -56,6 +84,12 @@ export default function ReportsPage() {
         </div>
       ) : null}
 
+      {debugInfo ? (
+        <div className="bg-amber-50 border border-amber-100 text-amber-700 rounded-2xl px-4 py-3 text-sm">
+          {debugInfo}
+        </div>
+      ) : null}
+
       {loading ? (
         <LoadingCard text="جاري تحميل التقارير..." />
       ) : (
@@ -73,7 +107,10 @@ export default function ReportsPage() {
               </thead>
               <tbody>
                 {rows.map((row, idx) => (
-                  <tr key={idx} className="border-b last:border-b-0 border-slate-100 text-slate-700">
+                  <tr
+                    key={idx}
+                    className="border-b last:border-b-0 border-slate-100 text-slate-700"
+                  >
                     {columns.map((col) => (
                       <td key={col} className="py-3 px-2">
                         {typeof row[col] === 'object'
@@ -86,7 +123,9 @@ export default function ReportsPage() {
               </tbody>
             </table>
           ) : (
-            <div className="py-8 text-center text-slate-400">لا توجد بيانات تقارير حاليًا.</div>
+            <div className="py-8 text-center text-slate-400">
+              لا توجد بيانات تقارير حالياً
+            </div>
           )}
         </div>
       )}
