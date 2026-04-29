@@ -3,26 +3,44 @@ import { api } from '../api';
 import PageShell from '../components/PageShell';
 import LoadingCard from '../components/LoadingCard';
 
-export default function UsersPage() {
-  const [user, setUser] = useState(null);
+export default function UsersPage({ user: initialUser }) {
+  const [user, setUser] = useState(() => {
+    if (initialUser) return initialUser;
+
+    const stored = localStorage.getItem('masar_user');
+    return stored ? JSON.parse(stored) : null;
+  });
+
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialUser);
 
   useEffect(() => {
     let mounted = true;
 
     async function load() {
-      setLoading(true);
-      setError('');
+      // إذا عندنا بيانات جاهزة من props لا نظهر خطأ ولا loading قوي
+      if (initialUser) {
+        setUser(initialUser);
+        setLoading(false);
+      }
 
       try {
         const res = await api.get('/auth/me/');
         if (!mounted) return;
-        setUser(res.data || null);
+
+        if (res.data) {
+          setUser(res.data);
+          localStorage.setItem('masar_user', JSON.stringify(res.data));
+          setError('');
+        }
       } catch (err) {
         if (!mounted) return;
-        setError(err?.response?.data?.detail || 'تعذر تحميل بيانات المستخدم');
-        setUser(null);
+
+        // لا نعرض خطأ إذا كانت عندنا بيانات محلية جاهزة
+        const stored = localStorage.getItem('masar_user');
+        if (!initialUser && !stored) {
+          setError(err?.response?.data?.detail || 'تعذر تحميل بيانات المستخدم');
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -33,7 +51,7 @@ export default function UsersPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [initialUser]);
 
   return (
     <PageShell
@@ -44,7 +62,7 @@ export default function UsersPage() {
           href="https://masar-backend-oxnm.onrender.com/admin/"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex bg-brand text-white px-4 py-3 rounded-2xl"
+          className="bg-brand text-white px-4 py-3 rounded-2xl"
         >
           فتح Django Admin
         </a>

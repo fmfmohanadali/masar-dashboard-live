@@ -288,7 +288,7 @@ export default function DashboardPage({ user, onLogout }) {
         return <ReportsPage />;
 
       case 'users':
-        return <UsersPage />;
+        return <UsersPage user={user} />;
 
       case 'settings':
         return <SettingsPage user={user} />;
