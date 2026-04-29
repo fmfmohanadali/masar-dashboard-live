@@ -15,27 +15,35 @@ export default function TrucksPage() {
     async function load() {
       setLoading(true);
       setError('');
+
       try {
         const res = await api.get('/trips/');
         if (!mounted) return;
 
         const trips = res.data?.results || res.data || [];
-        const truckMap = new Map();
+        const map = new Map();
 
         (Array.isArray(trips) ? trips : []).forEach((trip) => {
           const plate = trip.truck_plate || '-';
-          if (!truckMap.has(plate)) {
-            truckMap.set(plate, {
+          const current = map.get(plate);
+
+          if (!current) {
+            map.set(plate, {
               plate_number: plate,
-              latest_trip: trip.trip_code || '-',
-              latest_status: trip.status || '-',
               driver_name: trip.driver_name || '-',
+              last_trip_code: trip.trip_code || '-',
+              last_container_no: trip.container_no || '-',
               destination: trip.destination || '-',
+              last_status: trip.status || '-',
+              slot_label: trip.slot_label || '-',
+              trip_count: 1,
             });
+          } else {
+            current.trip_count += 1;
           }
         });
 
-        setItems(Array.from(truckMap.values()));
+        setItems(Array.from(map.values()));
       } catch (err) {
         if (!mounted) return;
         setError(err?.response?.data?.detail || 'تعذر تحميل بيانات الشاحنات');
@@ -46,26 +54,31 @@ export default function TrucksPage() {
     }
 
     load();
-    return () => { mounted = false; };
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const filtered = useMemo(() => {
     if (!search) return items;
     const q = search.toLowerCase();
+
     return items.filter((item) =>
       String(item.plate_number).toLowerCase().includes(q) ||
-      String(item.latest_trip).toLowerCase().includes(q) ||
-      String(item.driver_name).toLowerCase().includes(q)
+      String(item.driver_name).toLowerCase().includes(q) ||
+      String(item.last_trip_code).toLowerCase().includes(q) ||
+      String(item.last_container_no).toLowerCase().includes(q)
     );
   }, [items, search]);
 
   return (
     <PageShell
       title="الشاحنات"
-      subtitle="قائمة الشاحنات المستخرجة من بيانات الرحلات"
+      subtitle="عرض الشاحنات الفعلية المستخرجة من بيانات الرحلات"
       actions={
         <input
-          placeholder="ابحث برقم الشاحنة أو السائق أو الرحلة"
+          placeholder="ابحث برقم الشاحنة أو السائق أو الحاوية"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="border border-slate-200 rounded-2xl px-4 py-3 bg-white min-w-[280px]"
@@ -90,25 +103,29 @@ export default function TrucksPage() {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="text-slate-400 border-b border-slate-100">
+                <th className="text-right py-3 px-2 font-medium">عدد الرحلات</th>
+                <th className="text-right py-3 px-2 font-medium">آخر موعد</th>
                 <th className="text-right py-3 px-2 font-medium">الحالة الأخيرة</th>
                 <th className="text-right py-3 px-2 font-medium">الوجهة</th>
+                <th className="text-right py-3 px-2 font-medium">آخر حاوية</th>
                 <th className="text-right py-3 px-2 font-medium">السائق</th>
-                <th className="text-right py-3 px-2 font-medium">آخر رحلة</th>
                 <th className="text-right py-3 px-2 font-medium">رقم الشاحنة</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length ? filtered.map((truck) => (
                 <tr key={truck.plate_number} className="border-b last:border-b-0 border-slate-100 text-slate-700">
-                  <td className="py-3 px-2">{truck.latest_status}</td>
+                  <td className="py-3 px-2">{truck.trip_count}</td>
+                  <td className="py-3 px-2">{truck.slot_label}</td>
+                  <td className="py-3 px-2">{truck.last_status}</td>
                   <td className="py-3 px-2">{truck.destination}</td>
+                  <td className="py-3 px-2">{truck.last_container_no}</td>
                   <td className="py-3 px-2">{truck.driver_name}</td>
-                  <td className="py-3 px-2">{truck.latest_trip}</td>
                   <td className="py-3 px-2 font-medium">{truck.plate_number}</td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan="5" className="py-6 text-center text-slate-400">لا توجد شاحنات مطابقة.</td>
+                  <td colSpan="7" className="py-6 text-center text-slate-400">لا توجد شاحنات مطابقة.</td>
                 </tr>
               )}
             </tbody>

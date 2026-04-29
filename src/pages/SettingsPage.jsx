@@ -41,12 +41,7 @@ export default function SettingsPage({ user }) {
 
         <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
           <div className="text-sm text-slate-500 mb-4">إدارة النظام</div>
-          <a
-            href="https://masar-backend-oxnm.onrender.com/admin/"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex bg-brand text-white px-4 py-3 rounded-2xl"
-          >
+          https://masar-backend-oxnm.onrender.com/admin/
             فتح لوحة Django Admin
           </a>
         </div>
@@ -56,7 +51,7 @@ export default function SettingsPage({ user }) {
         هذه الصفحة مخصصة حاليًا لإعدادات الواجهة فقط. يمكن لاحقًا إضافة:
         <ul className="list-disc pr-6 mt-2 space-y-1">
           <li>تغيير رابط الـ API من داخل الواجهة</li>
-          <li>وضع Dark Mode</li>
+          <li>الوضع الليلي (Dark Mode)</li>
           <li>إعدادات اللغة</li>
           <li>إعدادات التقارير والطباعة</li>
         </ul>

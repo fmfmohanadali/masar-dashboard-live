@@ -40,12 +40,7 @@ export default function UsersPage() {
       title="المستخدمون"
       subtitle="عرض المستخدم الحالي والوصول إلى إدارة المستخدمين"
       actions={
-        <a
-          href="https://masar-backend-oxnm.onrender.com/admin/"
-          target="_blank"
-          rel="noreferrer"
-          className="bg-brand text-white px-4 py-3 rounded-2xl"
-        >
+        https://masar-backend-oxnm.onrender.com/admin/
           فتح Django Admin
         </a>
       }
