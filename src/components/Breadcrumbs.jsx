@@ -1,19 +1,23 @@
-export default function Breadcrumbs({ items = [] }) {export default function Breadcrumbs({ items =  if (!items.length) return null;
+export default function Breadcrumbs({ items = [] }) {
+  if (!Array.isArray(items) || items.length === 0) return null;
 
   return (
-    <div className="mb-4">
-      <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-        {items.map((item, index) => (
-          <div key={`${item}-${index}`} className="flex items-center gap-2">
-            <span className={index === items.length - 1 ? 'text-slate-900 font-semibold' : ''}>
+    <nav className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
+      {items.map((item, index) => {
+        const isLast = index === items.length - 1;
+
+        return (
+          <span key={`${item}-${index}`} className="flex items-center gap-2">
+            <span className={isLast ? 'text-slate-700 font-semibold' : ''}>
               {item}
             </span>
-            {index < items.length - 1 ? (
+
+            {!isLast ? (
               <span className="text-slate-300">/</span>
             ) : null}
-          </div>
-        ))}
-      </div>
-    </div>
+          </span>
+        );
+      })}
+    </nav>
   );
 }
