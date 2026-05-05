@@ -23,6 +23,9 @@ import ReportsPage from './ReportsPage';
 import UsersPage from './UsersPage';
 import SettingsPage from './SettingsPage';
 
+import Breadcrumbs from '../components/Breadcrumbs';
+import { getSectionMeta } from '../config/sectionMeta';
+
 export default function DashboardPage({ user, onLogout }) {
   const [summary, setSummary] = useState(null);
   const [notifications, setNotifications] = useState([]);
@@ -67,11 +70,16 @@ export default function DashboardPage({ user, onLogout }) {
   );
 
   const activeSection = pathToSection[location.pathname] || 'dashboard';
+  const currentMeta = getSectionMeta(activeSection);
 
   function handleNavigate(sectionKey) {
     const target = sectionToPath[sectionKey] || '/dashboard';
     navigate(target);
   }
+useEffect(() => {
+  document.title = currentMeta?.browserTitle || 'مسار';
+}, [currentMeta]);
+
 
   useEffect(() => {
     let mounted = true;
@@ -350,7 +358,7 @@ export default function DashboardPage({ user, onLogout }) {
 
       <main className="flex-1 p-6 lg:p-8 overflow-hidden">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
-          <Topbar user={user} notificationCount={notifications.length} />
+          <Topbar user={user} notificationCount={notifications.length} title={currentMeta.title} subtitle={currentMeta.subtitle}/>
 
           <button
             onClick={() => window.print()}

@@ -23,7 +23,7 @@ export default function ReportsPage() {
 
       try {
         // المحاولة الأولى: turnaround report
-        const res = await api.get('/turnaround-report/');
+        const res = await api.get('/reports/turnaround/');
         if (!mounted) return;
 
         const data = res.data?.results || res.data || [];
