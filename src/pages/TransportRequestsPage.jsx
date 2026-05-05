@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Plus,
   RefreshCw,
-  Search,
   CheckCircle2,
   Send,
   CreditCard,
