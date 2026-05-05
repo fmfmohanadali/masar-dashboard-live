@@ -1,6 +1,10 @@
 import { Bar } from 'react-chartjs-2';
 
-export default function BookingsBarChart({ labels = [], values = [], capacity = [] }) {
+export default function BookingsBarChart({
+  labels = [],
+  values = [],
+  capacity = [],
+}) {
   const safeLabels = Array.isArray(labels) ? labels : [];
   const safeValues = Array.isArray(values) ? values : [];
   const safeCapacity = Array.isArray(capacity) ? capacity : [];
@@ -60,10 +64,20 @@ export default function BookingsBarChart({ labels = [], values = [], capacity = 
   };
 
   return (
-    <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100 h-[330px]">
-      <div className="text-lg font-bold text-slate-900 mb-4">توزيع الحجوزات على ساعات اليوم</div>
-      <Bar data={data} options={options} />
+    <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100 h-[360px]">
+      <div className="mb-4">
+        <h3 className="text-xl font-black text-slate-900">
+          توزيع الحجوزات على ساعات اليوم
+        </h3>
+
+        <p className="text-sm text-slate-400 mt-1">
+          مقارنة بين الحجوزات والسعة المتاحة
+        </p>
+      </div>
+
+      <div className="h-[270px]">
+        <Bar data={data} options={options} />
+      </div>
     </div>
   );
 }
-``
