@@ -15,6 +15,7 @@ import LoadingCard from '../components/LoadingCard';
 
 import BookingsPage from './BookingsPage';
 import TripsPage from './TripsPage';
+import TransportRequestsPage from './TransportRequestsPage';
 import ContainersPage from './ContainersPage';
 import TrucksPage from './TrucksPage';
 import ShipsPage from './ShipsPage';
@@ -42,6 +43,7 @@ export default function DashboardPage({ user, onLogout }) {
       '/dashboard': 'dashboard',
       '/bookings': 'bookings',
       '/trips': 'trips',
+      '/transport-requests': 'transport-requests',
       '/containers': 'containers',
       '/trucks': 'trucks',
       '/ships': 'ships',
@@ -58,6 +60,7 @@ export default function DashboardPage({ user, onLogout }) {
       dashboard: '/dashboard',
       bookings: '/bookings',
       trips: '/trips',
+      'transport-requests': '/transport-requests',
       containers: '/containers',
       trucks: '/trucks',
       ships: '/ships',
@@ -321,6 +324,9 @@ useEffect(() => {
 
       case 'trips':
         return <TripsPage />;
+        
+      case 'transport-requests':
+        return <TransportRequestsPage />;  
 
       case 'containers':
         return <ContainersPage />;

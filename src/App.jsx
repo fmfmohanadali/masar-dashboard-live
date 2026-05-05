@@ -88,6 +88,11 @@ export default function App() {
       />
 
       <Route
+        path="/transport-requests"
+        element={<DashboardPage user={user} onLogout={handleLogout} />}
+      />
+
+      <Route
         path="/containers"
         element={<DashboardPage user={user} onLogout={handleLogout} />}
       />

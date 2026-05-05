@@ -17,6 +17,12 @@ export const sectionMeta = {
     breadcrumb: ['الرئيسية', 'الرحلات'],
     browserTitle: 'مسار | الرحلات',
   },
+  'transport-requests': {
+  title: 'طلبات النقل',
+  subtitle: 'إدارة طلبات النقل من تصريح الإفراج حتى إصدار QR',
+  breadcrumb: ['الرئيسية', 'طلبات النقل'],
+  browserTitle: 'مسار | طلبات النقل',
+  },
   containers: {
     title: 'الحاويات',
     subtitle: 'عرض الحاويات المشتقة من بيانات الرحلات',
