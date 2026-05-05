@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+
 import { api } from '../api';
 import PageShell from '../components/PageShell';
 import LoadingCard from '../components/LoadingCard';
@@ -18,16 +19,21 @@ export default function TrucksPage() {
 
       try {
         const res = await api.get('/trips/');
+
         if (!mounted) return;
 
-        const trips = res.data?.results || res.data || [];
+        const trips = Array.isArray(res.data?.results)
+          ? res.data.results
+          : Array.isArray(res.data)
+          ? res.data
+          : [];
+
         const map = new Map();
 
-        (Array.isArray(trips) ? trips : []).forEach((trip) => {
+        trips.forEach((trip) => {
           const plate = trip.truck_plate || '-';
-          const current = map.get(plate);
 
-          if (!current) {
+          if (!map.has(plate)) {
             map.set(plate, {
               plate_number: plate,
               driver_name: trip.driver_name || '-',
@@ -39,6 +45,7 @@ export default function TrucksPage() {
               trip_count: 1,
             });
           } else {
+            const current = map.get(plate);
             current.trip_count += 1;
           }
         });
@@ -62,6 +69,7 @@ export default function TrucksPage() {
 
   const filtered = useMemo(() => {
     if (!search) return items;
+
     const q = search.toLowerCase();
 
     return items.filter((item) =>
@@ -112,20 +120,25 @@ export default function TrucksPage() {
                 <th className="text-right py-3 px-2 font-medium">رقم الشاحنة</th>
               </tr>
             </thead>
+
             <tbody>
-              {filtered.length ? filtered.map((truck) => (
-                <tr key={truck.plate_number} className="border-b last:border-b-0 border-slate-100 text-slate-700">
-                  <td className="py-3 px-2">{truck.trip_count}</td>
-                  <td className="py-3 px-2">{truck.slot_label}</td>
-                  <td className="py-3 px-2">{truck.last_status}</td>
-                  <td className="py-3 px-2">{truck.destination}</td>
-                  <td className="py-3 px-2">{truck.last_container_no}</td>
-                  <td className="py-3 px-2">{truck.driver_name}</td>
-                  <td className="py-3 px-2 font-medium">{truck.plate_number}</td>
-                </tr>
-              )) : (
+              {filtered.length ? (
+                filtered.map((truck) => (
+                  <tr key={truck.plate_number} className="border-b last:border-b-0 border-slate-100 text-slate-700">
+                    <td className="py-3 px-2">{truck.trip_count}</td>
+                    <td className="py-3 px-2">{truck.slot_label}</td>
+                    <td className="py-3 px-2">{truck.last_status}</td>
+                    <td className="py-3 px-2">{truck.destination}</td>
+                    <td className="py-3 px-2">{truck.last_container_no}</td>
+                    <td className="py-3 px-2">{truck.driver_name}</td>
+                    <td className="py-3 px-2 font-medium">{truck.plate_number}</td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
-                  <td colSpan="7" className="py-6 text-center text-slate-400">لا توجد شاحنات مطابقة.</td>
+                  <td colSpan="7" className="py-6 text-center text-slate-400">
+                    لا توجد شاحنات مطابقة.
+                  </td>
                 </tr>
               )}
             </tbody>

@@ -1,7 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
+
 import { api } from '../api';
 import PageShell from '../components/PageShell';
 import LoadingCard from '../components/LoadingCard';
+
+const statuses = [
+  'CREATED',
+  'BOOKED',
+  'APPROVED',
+  'ARRIVED_GATE',
+  'ENTERED_PORT',
+  'AT_BERTH',
+  'LOADING_COMPLETE',
+  'PASSED_CUSTOMS',
+  'EXITED_PORT',
+  'IN_TRANSIT',
+  'DELIVERED',
+  'CANCELLED',
+];
 
 export default function TripsPage() {
   const [items, setItems] = useState([]);
@@ -13,14 +29,23 @@ export default function TripsPage() {
   async function load() {
     setLoading(true);
     setError('');
+
     try {
       const params = new URLSearchParams();
+
       if (search) params.set('search', search);
       if (statusFilter) params.set('status', statusFilter);
 
-      const res = await api.get(`/trips/?${params.toString()}`);
-      const data = res.data?.results || res.data || [];
-      setItems(Array.isArray(data) ? data : []);
+      const query = params.toString();
+      const res = await api.get(`/trips/${query ? `?${query}` : ''}`);
+
+      const data = Array.isArray(res.data?.results)
+        ? res.data.results
+        : Array.isArray(res.data)
+        ? res.data
+        : [];
+
+      setItems(data);
     } catch (err) {
       setError(err?.response?.data?.detail || 'تعذر تحميل الرحلات');
       setItems([]);
@@ -31,13 +56,19 @@ export default function TripsPage() {
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const stats = useMemo(() => {
     const total = items.length;
-    const delivered = items.filter(t => t.status === 'DELIVERED').length;
-    const inside = items.filter(t => ['ENTERED_PORT', 'AT_BERTH', 'PASSED_CUSTOMS'].includes(t.status)).length;
-    const waiting = items.filter(t => ['CREATED', 'BOOKED', 'APPROVED'].includes(t.status)).length;
+    const delivered = items.filter((t) => t.status === 'DELIVERED').length;
+    const inside = items.filter((t) =>
+      ['ENTERED_PORT', 'AT_BERTH', 'PASSED_CUSTOMS', 'IN_TRANSIT'].includes(t.status)
+    ).length;
+    const waiting = items.filter((t) =>
+      ['CREATED', 'BOOKED', 'APPROVED'].includes(t.status)
+    ).length;
+
     return { total, delivered, inside, waiting };
   }, [items]);
 
@@ -53,15 +84,11 @@ export default function TripsPage() {
             className="border border-slate-200 rounded-2xl px-4 py-3 bg-white"
           >
             <option value="">كل الحالات</option>
-            <option value="CREATED">CREATED</option>
-            <option value="BOOKED">BOOKED</option>
-            <option value="APPROVED">APPROVED</option>
-            <option value="ENTERED_PORT">ENTERED_PORT</option>
-            <option value="AT_BERTH">AT_BERTH</option>
-            <option value="PASSED_CUSTOMS">PASSED_CUSTOMS</option>
-            <option value="EXITED_PORT">EXITED_PORT</option>
-            <option value="DELIVERED">DELIVERED</option>
-            <option value="CANCELLED">CANCELLED</option>
+            {statuses.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
           </select>
 
           <input
@@ -87,22 +114,10 @@ export default function TripsPage() {
       ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-          <div className="text-sm text-slate-500 mb-2">كل الرحلات</div>
-          <div className="text-4xl font-black text-slate-900">{stats.total}</div>
-        </div>
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-          <div className="text-sm text-slate-500 mb-2">في الانتظار</div>
-          <div className="text-4xl font-black text-amber-600">{stats.waiting}</div>
-        </div>
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-          <div className="text-sm text-slate-500 mb-2">داخل الميناء</div>
-          <div className="text-4xl font-black text-blue-600">{stats.inside}</div>
-        </div>
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-          <div className="text-sm text-slate-500 mb-2">تم التسليم</div>
-          <div className="text-4xl font-black text-emerald-600">{stats.delivered}</div>
-        </div>
+        <MiniStat label="كل الرحلات" value={stats.total} color="text-slate-900" />
+        <MiniStat label="في الانتظار" value={stats.waiting} color="text-amber-600" />
+        <MiniStat label="داخل الميناء" value={stats.inside} color="text-blue-600" />
+        <MiniStat label="تم التسليم" value={stats.delivered} color="text-emerald-600" />
       </div>
 
       {loading ? (
@@ -121,24 +136,29 @@ export default function TripsPage() {
                 <th className="text-right py-3 px-2 font-medium">رمز الرحلة</th>
               </tr>
             </thead>
+
             <tbody>
-              {items.length ? items.map((t) => (
-                <tr key={t.id || t.trip_code} className="border-b last:border-b-0 border-slate-100 text-slate-700">
-                  <td className="py-3 px-2">
-                    <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                      {t.status || '-'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-2">{t.slot_label || '-'}</td>
-                  <td className="py-3 px-2">{t.destination || '-'}</td>
-                  <td className="py-3 px-2">{t.driver_name || '-'}</td>
-                  <td className="py-3 px-2">{t.truck_plate || '-'}</td>
-                  <td className="py-3 px-2">{t.container_no || '-'}</td>
-                  <td className="py-3 px-2 font-medium">{t.trip_code || '-'}</td>
-                </tr>
-              )) : (
+              {items.length ? (
+                items.map((trip) => (
+                  <tr key={trip.id || trip.trip_code} className="border-b last:border-b-0 border-slate-100 text-slate-700">
+                    <td className="py-3 px-2">
+                      <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                        {trip.status || '-'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-2">{trip.slot_label || '-'}</td>
+                    <td className="py-3 px-2">{trip.destination || '-'}</td>
+                    <td className="py-3 px-2">{trip.driver_name || '-'}</td>
+                    <td className="py-3 px-2">{trip.truck_plate || '-'}</td>
+                    <td className="py-3 px-2">{trip.container_no || '-'}</td>
+                    <td className="py-3 px-2 font-medium">{trip.trip_code || '-'}</td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
-                  <td colSpan="7" className="py-6 text-center text-slate-400">لا توجد رحلات.</td>
+                  <td colSpan="7" className="py-6 text-center text-slate-400">
+                    لا توجد رحلات.
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -146,5 +166,14 @@ export default function TripsPage() {
         </div>
       )}
     </PageShell>
+  );
+}
+
+function MiniStat({ label, value, color }) {
+  return (
+    <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
+      <div className="text-sm text-slate-500 mb-2">{label}</div>
+      <div className={`text-4xl font-black ${color}`}>{value}</div>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+
 import { api } from '../api';
 import PageShell from '../components/PageShell';
 import LoadingCard from '../components/LoadingCard';
@@ -25,8 +26,14 @@ export default function ShipsPage() {
         if (!mounted) return;
 
         setSummary(summaryRes.data || null);
-        const tripData = tripsRes.data?.results || tripsRes.data || [];
-        setTrips(Array.isArray(tripData) ? tripData.slice(0, 8) : []);
+
+        const tripData = Array.isArray(tripsRes.data?.results)
+          ? tripsRes.data.results
+          : Array.isArray(tripsRes.data)
+          ? tripsRes.data
+          : [];
+
+        setTrips(tripData.slice(0, 8));
       } catch (err) {
         if (!mounted) return;
         setError(err?.response?.data?.detail || 'تعذر تحميل مؤشرات السفن');
@@ -60,24 +67,15 @@ export default function ShipsPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-              <div className="text-sm text-slate-500 mb-2">الرحلات داخل الميناء</div>
-              <div className="text-4xl font-black text-blue-600">{summary?.inside_port ?? '--'}</div>
-            </div>
-
-            <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-              <div className="text-sm text-slate-500 mb-2">الرحلات في الانتظار</div>
-              <div className="text-4xl font-black text-amber-600">{summary?.waiting_trips ?? '--'}</div>
-            </div>
-
-            <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-              <div className="text-sm text-slate-500 mb-2">الرحلات المسلمة</div>
-              <div className="text-4xl font-black text-emerald-600">{summary?.delivered ?? '--'}</div>
-            </div>
+            <MiniStat label="الرحلات داخل الميناء" value={summary?.inside_port ?? '--'} color="text-blue-600" />
+            <MiniStat label="الرحلات في الانتظار" value={summary?.waiting_trips ?? '--'} color="text-amber-600" />
+            <MiniStat label="الرحلات المسلمة" value={summary?.delivered ?? '--'} color="text-emerald-600" />
           </div>
 
           <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100 overflow-x-auto">
-            <h3 className="text-xl font-black text-slate-900 mb-4">أحدث الحركة المرتبطة بالميناء</h3>
+            <h3 className="text-xl font-black text-slate-900 mb-4">
+              أحدث الحركة المرتبطة بالميناء
+            </h3>
 
             {trips.length ? (
               <table className="min-w-full text-sm">
@@ -91,6 +89,7 @@ export default function ShipsPage() {
                     <th className="text-right py-3 px-2 font-medium">الرحلة</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {trips.map((trip) => (
                     <tr key={trip.id || trip.trip_code} className="border-b last:border-b-0 border-slate-100 text-slate-700">
@@ -106,17 +105,25 @@ export default function ShipsPage() {
               </table>
             ) : (
               <div className="py-8 text-center text-slate-400">
-                لا توجد بيانات حركة مرتبطة بالميناء حالياً
+                لا توجد بيانات حركة مرتبطة بالميناء حاليًا.
               </div>
             )}
           </div>
 
-          <div className="bg-blue-50 border border-blue-100 rounded-[22px] p-5 text-slate-700">
-            هذه الصفحة تعرض <span className="font-bold">مؤشرات بحرية تشغيلية واقعية</span> مشتقة من البيانات الحالية،
-            لكنها لا تعرض سجل سفن فعلي بالأسماء إلا بعد إضافة API خاصة بالسفن في الـ backend.
+          <div className="bg-blue-50 border border-blue-100 text-blue-700 rounded-2xl px-4 py-3 text-sm leading-7">
+            هذه الصفحة تعرض مؤشرات بحرية تشغيلية مشتقة من البيانات الحالية، ولا تعرض سجل سفن فعلي بالأسماء إلا بعد إضافة API خاصة بالسفن في الـ Backend.
           </div>
         </>
       )}
     </PageShell>
+  );
+}
+
+function MiniStat({ label, value, color }) {
+  return (
+    <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
+      <div className="text-sm text-slate-500 mb-2">{label}</div>
+      <div className={`text-4xl font-black ${color}`}>{value}</div>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+
 import { api } from '../api';
 import PageShell from '../components/PageShell';
 import LoadingCard from '../components/LoadingCard';
@@ -15,14 +16,23 @@ export default function ContainersPage() {
     async function load() {
       setLoading(true);
       setError('');
+
       try {
         const res = await api.get('/trips/');
+
         if (!mounted) return;
-        const trips = res.data?.results || res.data || [];
+
+        const trips = Array.isArray(res.data?.results)
+          ? res.data.results
+          : Array.isArray(res.data)
+          ? res.data
+          : [];
 
         const map = new Map();
-        (Array.isArray(trips) ? trips : []).forEach((trip) => {
-          const key = trip.container_no || `unknown-${trip.id}`;
+
+        trips.forEach((trip) => {
+          const key = trip.container_no || `unknown-${trip.id || trip.trip_code}`;
+
           if (!map.has(key)) {
             map.set(key, {
               container_no: trip.container_no || '-',
@@ -30,6 +40,7 @@ export default function ContainersPage() {
               latest_trip: trip.trip_code || '-',
               truck_plate: trip.truck_plate || '-',
               destination: trip.destination || '-',
+              slot_label: trip.slot_label || '-',
             });
           }
         });
@@ -45,12 +56,17 @@ export default function ContainersPage() {
     }
 
     load();
-    return () => { mounted = false; };
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const filtered = useMemo(() => {
     if (!search) return items;
+
     const q = search.toLowerCase();
+
     return items.filter((x) =>
       String(x.container_no).toLowerCase().includes(q) ||
       String(x.latest_trip).toLowerCase().includes(q) ||
@@ -90,24 +106,31 @@ export default function ContainersPage() {
             <thead>
               <tr className="text-slate-400 border-b border-slate-100">
                 <th className="text-right py-3 px-2 font-medium">الحالة الأخيرة</th>
+                <th className="text-right py-3 px-2 font-medium">آخر موعد</th>
                 <th className="text-right py-3 px-2 font-medium">الوجهة</th>
                 <th className="text-right py-3 px-2 font-medium">رقم الشاحنة</th>
                 <th className="text-right py-3 px-2 font-medium">آخر رحلة</th>
                 <th className="text-right py-3 px-2 font-medium">رقم الحاوية</th>
               </tr>
             </thead>
+
             <tbody>
-              {filtered.length ? filtered.map((c) => (
-                <tr key={c.container_no} className="border-b last:border-b-0 border-slate-100 text-slate-700">
-                  <td className="py-3 px-2">{c.latest_status}</td>
-                  <td className="py-3 px-2">{c.destination}</td>
-                  <td className="py-3 px-2">{c.truck_plate}</td>
-                  <td className="py-3 px-2">{c.latest_trip}</td>
-                  <td className="py-3 px-2 font-medium">{c.container_no}</td>
-                </tr>
-              )) : (
+              {filtered.length ? (
+                filtered.map((container) => (
+                  <tr key={container.container_no} className="border-b last:border-b-0 border-slate-100 text-slate-700">
+                    <td className="py-3 px-2">{container.latest_status}</td>
+                    <td className="py-3 px-2">{container.slot_label}</td>
+                    <td className="py-3 px-2">{container.destination}</td>
+                    <td className="py-3 px-2">{container.truck_plate}</td>
+                    <td className="py-3 px-2">{container.latest_trip}</td>
+                    <td className="py-3 px-2 font-bold">{container.container_no}</td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
-                  <td colSpan="5" className="py-6 text-center text-slate-400">لا توجد حاويات مطابقة.</td>
+                  <td colSpan="6" className="py-6 text-center text-slate-400">
+                    لا توجد حاويات مطابقة.
+                  </td>
                 </tr>
               )}
             </tbody>

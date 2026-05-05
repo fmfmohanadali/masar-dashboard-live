@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+
 import { api } from '../api';
 import PageShell from '../components/PageShell';
 import LoadingCard from '../components/LoadingCard';
@@ -14,11 +15,19 @@ export default function CheckpointsPage() {
     async function load() {
       setLoading(true);
       setError('');
+
       try {
         const res = await api.get('/scan-points/');
+
         if (!mounted) return;
-        const data = res.data?.results || res.data || [];
-        setItems(Array.isArray(data) ? data : []);
+
+        const data = Array.isArray(res.data?.results)
+          ? res.data.results
+          : Array.isArray(res.data)
+          ? res.data
+          : [];
+
+        setItems(data);
       } catch (err) {
         if (!mounted) return;
         setError(err?.response?.data?.detail || 'تعذر تحميل نقاط التفتيش');
@@ -29,13 +38,17 @@ export default function CheckpointsPage() {
     }
 
     load();
-    return () => { mounted = false; };
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const stats = useMemo(() => {
     const total = items.length;
-    const active = items.filter(x => x.is_active).length;
+    const active = items.filter((x) => x.is_active).length;
     const inactive = total - active;
+
     return { total, active, inactive };
   }, [items]);
 
@@ -51,20 +64,9 @@ export default function CheckpointsPage() {
       ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-          <div className="text-sm text-slate-500 mb-2">إجمالي النقاط</div>
-          <div className="text-4xl font-black text-slate-900">{stats.total}</div>
-        </div>
-
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-          <div className="text-sm text-slate-500 mb-2">النقاط النشطة</div>
-          <div className="text-4xl font-black text-emerald-600">{stats.active}</div>
-        </div>
-
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-          <div className="text-sm text-slate-500 mb-2">النقاط غير النشطة</div>
-          <div className="text-4xl font-black text-slate-500">{stats.inactive}</div>
-        </div>
+        <MiniStat label="إجمالي النقاط" value={stats.total} color="text-slate-900" />
+        <MiniStat label="النقاط النشطة" value={stats.active} color="text-emerald-600" />
+        <MiniStat label="النقاط غير النشطة" value={stats.inactive} color="text-amber-600" />
       </div>
 
       {loading ? (
@@ -77,22 +79,29 @@ export default function CheckpointsPage() {
                 <th className="text-right py-3 px-2 font-medium">الحالة</th>
                 <th className="text-right py-3 px-2 font-medium">نوع النقطة</th>
                 <th className="text-right py-3 px-2 font-medium">الاسم</th>
+                <th className="text-right py-3 px-2 font-medium">الوصف</th>
               </tr>
             </thead>
+
             <tbody>
-              {items.length ? items.map((point) => (
-                <tr key={point.id} className="border-b last:border-b-0 border-slate-100 text-slate-700">
-                  <td className="py-3 px-2">
-                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${point.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                      {point.is_active ? 'نشطة' : 'غير نشطة'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-2">{point.point_type || '-'}</td>
-                  <td className="py-3 px-2 font-medium">{point.name || '-'}</td>
-                </tr>
-              )) : (
+              {items.length ? (
+                items.map((point) => (
+                  <tr key={point.id || point.point_type} className="border-b last:border-b-0 border-slate-100 text-slate-700">
+                    <td className="py-3 px-2">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${point.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+                        {point.is_active ? 'نشطة' : 'غير نشطة'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-2">{point.point_type || '-'}</td>
+                    <td className="py-3 px-2 font-bold">{point.name || '-'}</td>
+                    <td className="py-3 px-2">{point.location_description || '-'}</td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
-                  <td colSpan="3" className="py-6 text-center text-slate-400">لا توجد نقاط تفتيش.</td>
+                  <td colSpan="4" className="py-6 text-center text-slate-400">
+                    لا توجد نقاط تفتيش.
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -100,5 +109,14 @@ export default function CheckpointsPage() {
         </div>
       )}
     </PageShell>
+  );
+}
+
+function MiniStat({ label, value, color }) {
+  return (
+    <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
+      <div className="text-sm text-slate-500 mb-2">{label}</div>
+      <div className={`text-4xl font-black ${color}`}>{value}</div>
+    </div>
   );
 }

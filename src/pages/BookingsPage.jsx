@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
+
 import { api } from '../api';
 import PageShell from '../components/PageShell';
 import LoadingCard from '../components/LoadingCard';
 
 function hourLabel(hour) {
-  return `${String(hour).padStart(2, '0')}:00`;
+  const safeHour = Number.isFinite(Number(hour)) ? Number(hour) : 0;
+  return `${String(safeHour).padStart(2, '0')}:00`;
 }
 
 export default function BookingsPage() {
@@ -19,12 +21,20 @@ export default function BookingsPage() {
     async function load() {
       setLoading(true);
       setError('');
+
       try {
         const query = dateFilter ? `?date=${dateFilter}` : '';
         const res = await api.get(`/booking-slots/${query}`);
+
         if (!mounted) return;
-        const data = res.data?.results || res.data || [];
-        setItems(Array.isArray(data) ? data : []);
+
+        const data = Array.isArray(res.data?.results)
+          ? res.data.results
+          : Array.isArray(res.data)
+          ? res.data
+          : [];
+
+        setItems(data);
       } catch (err) {
         if (!mounted) return;
         setError(err?.response?.data?.detail || 'تعذر تحميل الحجوزات');
@@ -35,14 +45,18 @@ export default function BookingsPage() {
     }
 
     load();
-    return () => { mounted = false; };
+
+    return () => {
+      mounted = false;
+    };
   }, [dateFilter]);
 
   const stats = useMemo(() => {
     const total = items.length;
-    const closed = items.filter(x => x.is_closed).length;
+    const closed = items.filter((x) => x.is_closed).length;
     const open = total - closed;
     const availableSum = items.reduce((acc, x) => acc + Number(x.available ?? 0), 0);
+
     return { total, open, closed, availableSum };
   }, [items]);
 
@@ -66,22 +80,10 @@ export default function BookingsPage() {
       ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-          <div className="text-sm text-slate-500 mb-2">إجمالي الفترات</div>
-          <div className="text-4xl font-black text-slate-900">{stats.total}</div>
-        </div>
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-          <div className="text-sm text-slate-500 mb-2">الفترات المفتوحة</div>
-          <div className="text-4xl font-black text-emerald-600">{stats.open}</div>
-        </div>
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-          <div className="text-sm text-slate-500 mb-2">الفترات المغلقة</div>
-          <div className="text-4xl font-black text-rose-600">{stats.closed}</div>
-        </div>
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-          <div className="text-sm text-slate-500 mb-2">إجمالي المتاح</div>
-          <div className="text-4xl font-black text-brand">{stats.availableSum}</div>
-        </div>
+        <MiniStat label="إجمالي الفترات" value={stats.total} color="text-slate-900" />
+        <MiniStat label="الفترات المفتوحة" value={stats.open} color="text-emerald-600" />
+        <MiniStat label="الفترات المغلقة" value={stats.closed} color="text-red-600" />
+        <MiniStat label="إجمالي المتاح" value={stats.availableSum} color="text-blue-600" />
       </div>
 
       {loading ? (
@@ -93,25 +95,34 @@ export default function BookingsPage() {
               <tr className="text-slate-400 border-b border-slate-100">
                 <th className="text-right py-3 px-2 font-medium">الحالة</th>
                 <th className="text-right py-3 px-2 font-medium">المتاح</th>
+                <th className="text-right py-3 px-2 font-medium">المحجوز</th>
+                <th className="text-right py-3 px-2 font-medium">السعة</th>
                 <th className="text-right py-3 px-2 font-medium">الساعة</th>
                 <th className="text-right py-3 px-2 font-medium">التاريخ</th>
               </tr>
             </thead>
+
             <tbody>
-              {items.length ? items.map((slot) => (
-                <tr key={slot.id || `${slot.date}-${slot.hour}`} className="border-b last:border-b-0 border-slate-100 text-slate-700">
-                  <td className="py-3 px-2">
-                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${slot.is_closed ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
-                      {slot.is_closed ? 'مغلقة' : 'مفتوحة'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-2">{slot.available ?? '-'}</td>
-                  <td className="py-3 px-2">{hourLabel(slot.hour)}</td>
-                  <td className="py-3 px-2">{slot.date}</td>
-                </tr>
-              )) : (
+              {items.length ? (
+                items.map((slot) => (
+                  <tr key={slot.id || `${slot.date}-${slot.hour}`} className="border-b last:border-b-0 border-slate-100 text-slate-700">
+                    <td className="py-3 px-2">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${slot.is_closed ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                        {slot.is_closed ? 'مغلقة' : 'مفتوحة'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-2">{slot.available ?? '-'}</td>
+                    <td className="py-3 px-2">{slot.booked_count ?? '-'}</td>
+                    <td className="py-3 px-2">{slot.capacity ?? '-'}</td>
+                    <td className="py-3 px-2">{hourLabel(slot.hour)}</td>
+                    <td className="py-3 px-2">{slot.date || '-'}</td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
-                  <td colSpan="4" className="py-6 text-center text-slate-400">لا توجد فترات مطابقة.</td>
+                  <td colSpan="6" className="py-6 text-center text-slate-400">
+                    لا توجد فترات مطابقة.
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -119,5 +130,14 @@ export default function BookingsPage() {
         </div>
       )}
     </PageShell>
+  );
+}
+
+function MiniStat({ label, value, color }) {
+  return (
+    <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
+      <div className="text-sm text-slate-500 mb-2">{label}</div>
+      <div className={`text-4xl font-black ${color}`}>{value}</div>
+    </div>
   );
 }
