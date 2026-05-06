@@ -1297,6 +1297,11 @@ function InfoBox({ label, value }) {
     </div>
   );
 }
+function normalizeList(data) {
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data)) return data;
+  return [];
+}
 
 function cleanPayload(payload) {
   const output = {};
