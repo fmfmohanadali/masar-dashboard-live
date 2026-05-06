@@ -64,6 +64,7 @@ export default function BookingsPage() {
     <PageShell
       title="الحجوزات"
       subtitle="إدارة الفترات الزمنية المتاحة للحجوزات"
+      hideTitle
       actions={
         <input
           type="date"
