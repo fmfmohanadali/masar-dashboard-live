@@ -2,6 +2,7 @@ import { Download } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import { Menu } from 'lucide-react';
 
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
@@ -34,6 +35,7 @@ export default function DashboardPage({ user, onLogout }) {
   const [scanPoints, setScanPoints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -357,10 +359,10 @@ useEffect(() => {
   return (
     <div className="min-h-screen bg-soft flex flex-row-reverse">
       <Sidebar
-        onLogout={onLogout}
-        activeKey={activeSection}
-        onNavigate={handleNavigate}
-      />
+      onLogout={onLogout}
+      isOpen={sidebarOpen}
+      onClose={() => setSidebarOpen(false)}
+    />
 
       <main className="flex-1 p-6 lg:p-8 overflow-hidden">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
@@ -374,6 +376,23 @@ useEffect(() => {
             تصدير تقرير
           </button>
         </div>
+        <div className="flex items-start gap-3">
+         <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="lg:hidden bg-white border border-slate-100 rounded-2xl p-3 shadow-soft text-slate-700"
+          aria-label="فتح القائمة"
+        >
+         <Menu size={22} />
+        </button>
+
+         <Topbar
+         user={user}
+         notificationCount={notifications.length}
+         title={currentMeta.title}
+         subtitle={currentMeta.subtitle}
+        />
+       </div>
 
         {error ? (
           <div className="mb-5 bg-red-50 border border-red-100 text-red-700 rounded-2xl px-4 py-3 text-sm">
