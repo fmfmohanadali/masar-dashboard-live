@@ -366,7 +366,6 @@ useEffect(() => {
 
       <main className="flex-1 p-6 lg:p-8 overflow-hidden">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
-          <Topbar user={user} notificationCount={notifications.length} title={currentMeta.title} subtitle={currentMeta.subtitle}/>
 
           <button
             onClick={() => window.print()}

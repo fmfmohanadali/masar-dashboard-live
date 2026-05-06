@@ -368,6 +368,7 @@ export default function TransportRequestsPage() {
     <PageShell
       title="طلبات النقل"
       subtitle="إدارة طلبات النقل من تصريح الإفراج حتى إصدار QR"
+      hideTitle
       actions={
         <>
           <button onClick={load} className="btn-secondary">
