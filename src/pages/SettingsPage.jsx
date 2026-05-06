@@ -14,7 +14,12 @@ export default function SettingsPage({ user }) {
       title="الإعدادات"
       subtitle="إعدادات النظام والواجهة الحالية"
       actions={
-        https://masar-backend-oxnm.onrender.com/admin/
+        <a
+          href="https://masar-backend-oxnm.onrender.com/admin/"
+          target="_blank"
+          rel="noreferrer"
+          className="bg-white border border-slate-200 text-slate-700 px-4 py-3 rounded-2xl hover:bg-slate-50 transition font-bold"
+        >
           فتح Django Admin
         </a>
       }
@@ -41,7 +46,7 @@ export default function SettingsPage({ user }) {
 
           <button
             onClick={clearSession}
-            className="bg-red-600 text-white rounded-2xl px-5 py-3 hover:bg-red-700 transition"
+            className="bg-red-600 text-white rounded-2xl px-5 py-3 hover:bg-red-700 transition font-bold"
           >
             مسح الجلسة الحالية
           </button>
