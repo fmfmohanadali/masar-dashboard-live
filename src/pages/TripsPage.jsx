@@ -76,6 +76,7 @@ export default function TripsPage() {
     <PageShell
       title="الرحلات"
       subtitle="عرض وإدارة الرحلات الحالية"
+      hideTitle
       actions={
         <>
           <select

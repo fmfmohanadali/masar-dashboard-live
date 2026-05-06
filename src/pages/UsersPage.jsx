@@ -64,6 +64,7 @@ export default function UsersPage({ user: initialUser }) {
     <PageShell
       title="المستخدمون"
       subtitle="عرض المستخدم الحالي والوصول إلى إدارة المستخدمين"
+      hideTitle
       actions={
         <a
           href="https://masar-backend-oxnm.onrender.com/admin/"

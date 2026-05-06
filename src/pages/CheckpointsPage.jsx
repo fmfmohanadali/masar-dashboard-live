@@ -56,6 +56,7 @@ export default function CheckpointsPage() {
     <PageShell
       title="نقاط التفتيش"
       subtitle="عرض نقاط التفتيش وحالتها التشغيلية"
+      hideTitle
     >
       {error ? (
         <div className="bg-red-50 border border-red-100 text-red-700 rounded-2xl px-4 py-3 text-sm">

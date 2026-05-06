@@ -84,6 +84,7 @@ export default function TrucksPage() {
     <PageShell
       title="الشاحنات"
       subtitle="عرض الشاحنات الفعلية المستخرجة من بيانات الرحلات"
+      hideTitle
       actions={
         <input
           placeholder="ابحث برقم الشاحنة أو السائق أو الحاوية"

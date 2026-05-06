@@ -78,6 +78,7 @@ export default function ContainersPage() {
     <PageShell
       title="الحاويات"
       subtitle="عرض الحاويات المشتقة من بيانات الرحلات"
+      hideTitle
       actions={
         <input
           placeholder="ابحث برقم الحاوية أو الرحلة أو الشاحنة"

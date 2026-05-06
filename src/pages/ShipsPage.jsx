@@ -55,6 +55,7 @@ export default function ShipsPage() {
     <PageShell
       title="السفن"
       subtitle="مؤشرات تشغيل بحرية مشتقة من بيانات الميناء الحالية"
+      hideTitle
     >
       {error ? (
         <div className="bg-red-50 border border-red-100 text-red-700 rounded-2xl px-4 py-3 text-sm">

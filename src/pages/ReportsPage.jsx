@@ -96,6 +96,7 @@ export default function ReportsPage() {
     <PageShell
       title="التقارير"
       subtitle="عرض تقرير الدوران والبيانات التحليلية"
+      hideTitle
       actions={
         <button
           onClick={() => window.print()}

@@ -13,6 +13,7 @@ export default function SettingsPage({ user }) {
     <PageShell
       title="الإعدادات"
       subtitle="إعدادات النظام والواجهة الحالية"
+      hideTitle
       actions={
         <a
           href="https://masar-backend-oxnm.onrender.com/admin/"
