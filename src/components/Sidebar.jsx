@@ -55,7 +55,7 @@ export default function Sidebar({ onLogout, isOpen = false, onClose }) {
             </div>
 
             <div>
-              <div className="text-xl font-black">مسار بلس</div>
+              <div className="text-xl font-black">رصيف بلس</div>
               <div className="text-blue-100 text-sm">إدارة الميناء</div>
             </div>
           </div>
