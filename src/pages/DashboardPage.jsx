@@ -402,7 +402,7 @@ useEffect(() => {
         {renderSection()}
 
         <div className="text-center text-slate-500 text-sm mt-8">
-          © تطوير : مهند السعدي — جميع الحقوق محفوظة
+          © تطوير : رصيف — جميع الحقوق محفوظة
         </div>
       </main>
     </div>
