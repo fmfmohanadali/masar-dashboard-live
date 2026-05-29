@@ -20,6 +20,7 @@ import {
 import { api } from '../api';
 import PageShell from '../components/PageShell';
 import LoadingCard from '../components/LoadingCard';
+import QrImageDisplay from '../components/QrImageDisplay';
 
 /* =========================
    Status & Flow Definitions
