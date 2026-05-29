@@ -1,0 +1,530 @@
+name: "🎨 Improve Dashboard"
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'اكتب "yes" للتأكيد'
+        required: true
+        default: 'no'
+
+permissions:
+  contents: write
+
+jobs:
+  improve:
+    if: github.event.inputs.confirm == 'yes'
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: "🔧 Fix package.json"
+        run: |
+          cat > package.json << 'EOF'
+          {
+            "name": "masar-dashboard-live",
+            "private": true,
+            "version": "1.3.0",
+            "type": "module",
+            "scripts": {
+              "dev": "vite",
+              "build": "vite build",
+              "preview": "vite preview"
+            },
+            "dependencies": {
+              "@tanstack/react-query": "^5.62.0",
+              "axios": "^1.7.2",
+              "chart.js": "^4.4.3",
+              "lucide-react": "^0.378.0",
+              "react": "^18.3.1",
+              "react-chartjs-2": "^5.2.0",
+              "react-dom": "^18.3.1",
+              "react-hot-toast": "^2.4.1",
+              "react-router-dom": "^7.14.2"
+            },
+            "devDependencies": {
+              "@vitejs/plugin-react": "^4.3.1",
+              "autoprefixer": "^10.4.19",
+              "postcss": "^8.4.38",
+              "tailwindcss": "^3.4.4",
+              "vite": "^5.2.11"
+            }
+          }
+          EOF
+
+      - name: "🔐 Improve api.js - add 401 handler + error interceptor"
+        run: |
+          cat > src/api.js << 'APIEOF'
+          import axios from 'axios';
+
+          // API base URL - قابل للتغيير من environment
+          const API_BASE = import.meta.env.VITE_API_BASE || 'https://masar-backend-oxnm.onrender.com/api';
+
+          export const api = axios.create({
+            baseURL: API_BASE,
+            timeout: 30000,
+          });
+
+          // إضافة Token تلقائياً
+          api.interceptors.request.use((config) => {
+            const token = localStorage.getItem('masar_token');
+            if (token) {
+              config.headers.Authorization = `Token ${token}`;
+            }
+            return config;
+          });
+
+          // ✅ معالجة الأخطاء تلقائياً
+          api.interceptors.response.use(
+            (response) => response,
+            (error) => {
+              // ✅ إذا انتهت الجلسة، redirect للـ login
+              if (error.response?.status === 401) {
+                localStorage.removeItem('masar_token');
+                localStorage.removeItem('masar_user');
+                if (window.location.pathname !== '/login') {
+                  window.location.href = '/login';
+                }
+              }
+              return Promise.reject(error);
+            }
+          );
+
+          export async function loginRequest(username, password) {
+            const res = await api.post('/auth/login/', { username, password });
+            return res.data;
+          }
+
+          export async function logoutRequest() {
+            try {
+              await api.post('/auth/logout/');
+            } catch (_) {
+              // ignore logout failure
+            }
+          }
+
+          // ✅ دوال مساعدة للـ API
+          export function normalizeList(data) {
+            if (Array.isArray(data?.results)) return data.results;
+            if (Array.isArray(data)) return data;
+            return [];
+          }
+
+          export function getErrorMessage(err) {
+            return err?.response?.data?.message
+              || err?.response?.data?.detail
+              || err?.message
+              || 'حدث خطأ غير متوقع';
+          }
+          APIEOF
+
+      - name: "🔧 Improve App.jsx - cleaner routing"
+        run: |
+          cat > src/App.jsx << 'APPEOF'
+          import { useMemo, useState } from 'react';
+          import { Navigate, Route, Routes } from 'react-router-dom';
+          import DashboardPage from './pages/DashboardPage';
+          import LoginPage from './pages/LoginPage';
+          import { logoutRequest } from './api';
+
+          export default function App() {
+            const [user, setUser] = useState(() => {
+              const raw = localStorage.getItem('masar_user');
+              try {
+                return raw ? JSON.parse(raw) : null;
+              } catch {
+                localStorage.removeItem('masar_user');
+                return null;
+              }
+            });
+
+            const role = useMemo(() => user?.profile?.role || '', [user]);
+
+            async function handleLogout() {
+              try {
+                await logoutRequest();
+              } catch (error) {
+                console.error('Logout error:', error);
+              } finally {
+                localStorage.removeItem('masar_token');
+                localStorage.removeItem('masar_user');
+                setUser(null);
+              }
+            }
+
+            if (!user) {
+              return (
+                <Routes>
+                  <Route path="/login" element={<LoginPage onLogin={setUser} />} />
+                  <Route path="*" element={<Navigate to="/login" replace />} />
+                </Routes>
+              );
+            }
+
+            // ✅ الأدوار المسموحة
+            const allowedRoles = ['ops', 'port_admin'];
+            const isAllowed = allowedRoles.includes(role) || user.is_staff;
+
+            if (!isAllowed) {
+              return (
+                <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6" dir="rtl">
+                  <div className="bg-white rounded-3xl shadow-soft border border-slate-100 p-8 max-w-md w-full text-center">
+                    <h1 className="text-2xl font-bold text-slate-800 mb-3">
+                      غير مسموح بالدخول
+                    </h1>
+                    <p className="text-slate-500 mb-6 leading-7">
+                      هذه اللوحة مخصصة فقط لأدوار الإدارة والتشغيل:
+                      <br />
+                      <span className="font-mono text-sm">ops / port_admin</span>
+                    </p>
+                    <button
+                      onClick={handleLogout}
+                      className="bg-blue-600 text-white px-5 py-3 rounded-2xl hover:bg-blue-700 transition"
+                    >
+                      تسجيل الخروج
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
+            // ✅ تبسيط الـ routes - كل route يمر من DashboardPage
+            const pages = [
+              'dashboard', 'bookings', 'trips', 'transport-requests',
+              'containers', 'trucks', 'ships', 'checkpoints',
+              'reports', 'users', 'settings'
+            ];
+
+            return (
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                {pages.map((page) => (
+                  <Route
+                    key={page}
+                    path={`/${page}`}
+                    element={<DashboardPage user={user} onLogout={handleLogout} />}
+                  />
+                ))}
+                <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            );
+          }
+          APPEOF
+
+      - name: "🔐 Fix LoginPage - remove hardcoded credentials"
+        run: |
+          cat > src/pages/LoginPage.jsx << 'LOGINEOF'
+          import { useState } from 'react';
+          import { Anchor, LogIn } from 'lucide-react';
+          import { loginRequest } from '../api';
+
+          export default function LoginPage({ onLogin }) {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+
+            async function submit(e) {
+              e.preventDefault();
+              if (!username.trim() || !password.trim()) {
+                setError('أدخل اسم المستخدم وكلمة المرور');
+                return;
+              }
+
+              setError('');
+              setLoading(true);
+
+              try {
+                const data = await loginRequest(username.trim(), password);
+                localStorage.setItem('masar_token', data.token);
+                localStorage.setItem('masar_user', JSON.stringify(data.user));
+                onLogin(data.user);
+              } catch (err) {
+                if (err?.response?.status === 429) {
+                  setError('طلبات كثيرة. انتظر دقيقة ثم حاول مجدداً');
+                } else {
+                  setError(err?.response?.data?.detail || err?.response?.data?.message || 'تعذر تسجيل الدخول');
+                }
+              } finally {
+                setLoading(false);
+              }
+            }
+
+            return (
+              <div className="min-h-screen grid lg:grid-cols-2" dir="rtl">
+                {/* Left panel */}
+                <div className="hidden lg:flex flex-col justify-center items-center bg-gradient-to-br from-blue-700 to-blue-900 text-white p-12">
+                  <Anchor size={56} className="mb-6 opacity-90" />
+                  <h1 className="text-4xl font-extrabold mb-3 tracking-tight">مسار داشبورد</h1>
+                  <p className="text-blue-200 text-lg mb-8">لوحة تشغيل وإدارة الميناء</p>
+
+                  <div className="max-w-md text-center">
+                    <h2 className="text-xl font-bold mb-4">راقب العمليات لحظة بلحظة من مكان واحد</h2>
+                    <p className="text-blue-200/80 leading-8">
+                      لوحة تحكم مستقلة تربط الإدارة والتشغيل بالحجوزات والتنبيهات وعمليات المسح
+                      ونقاط التفتيش.
+                    </p>
+                  </div>
+                  <p className="mt-10 text-blue-300 text-sm">يسمح بالدخول لأدوار: ops / port_admin</p>
+                </div>
+
+                {/* Right panel - login form */}
+                <div className="flex flex-col justify-center items-center p-6 lg:p-12 bg-slate-50">
+                  <form onSubmit={submit} className="bg-white rounded-3xl shadow-soft border border-slate-100 p-8 w-full max-w-md space-y-5">
+                    <div className="text-center mb-2">
+                      <h2 className="text-2xl font-bold text-slate-800 mb-1">تسجيل الدخول</h2>
+                      <p className="text-slate-400 text-sm">أدخل بيانات حساب التشغيل أو إدارة الميناء.</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-600 mb-1">اسم المستخدم</label>
+                      <input
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                        placeholder="اسم المستخدم"
+                        autoComplete="username"
+                        autoFocus
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-600 mb-1">كلمة المرور</label>
+                      <input
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                        placeholder="كلمة المرور"
+                        type="password"
+                        autoComplete="current-password"
+                      />
+                    </div>
+
+                    {error ? (
+                      <div className="bg-red-50 border border-red-100 text-red-600 rounded-2xl px-4 py-3 text-sm">
+                        {error}
+                      </div>
+                    ) : null}
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-blue-600 text-white rounded-2xl py-3 font-semibold hover:bg-blue-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
+                    >
+                      <LogIn size={18} />
+                      {loading ? 'جاري الدخول...' : 'دخول'}
+                    </button>
+
+                    <p className="text-slate-400 text-xs text-center mt-2">
+                      تأكد أن الـ Backend يعمل وأن المستخدم لديه دور <strong>ops</strong> أو <strong>port_admin</strong>.
+                    </p>
+                  </form>
+                </div>
+              </div>
+            );
+          }
+          LOGINEOF
+
+      - name: "🔧 Improve TripsPage - Arabic status + better UX"
+        run: |
+          cat > src/pages/TripsPage.jsx << 'TRIPSEOF'
+          import { useEffect, useMemo, useState } from 'react';
+          import { RefreshCw, Search } from 'lucide-react';
+          import { api, normalizeList, getErrorMessage } from '../api';
+          import PageShell from '../components/PageShell';
+          import LoadingCard from '../components/LoadingCard';
+
+          // ✅ ترجمة الحالات بالعربي
+          const statusLabels = {
+            CREATED: { label: 'تم الإنشاء', cls: 'bg-slate-100 text-slate-600' },
+            BOOKED: { label: 'محجوزة', cls: 'bg-blue-50 text-blue-600' },
+            APPROVED: { label: 'معتمدة', cls: 'bg-cyan-50 text-cyan-700' },
+            ARRIVED_GATE: { label: 'وصلت البوابة', cls: 'bg-amber-50 text-amber-600' },
+            ENTERED_PORT: { label: 'داخل الميناء', cls: 'bg-orange-50 text-orange-600' },
+            AT_BERTH: { label: 'في الرصيف', cls: 'bg-purple-50 text-purple-600' },
+            LOADING_COMPLETE: { label: 'اكتمل التحميل', cls: 'bg-indigo-50 text-indigo-600' },
+            PASSED_CUSTOMS: { label: 'اجتازت الجمارك', cls: 'bg-teal-50 text-teal-600' },
+            EXITED_PORT: { label: 'خرجت من الميناء', cls: 'bg-lime-50 text-lime-700' },
+            IN_TRANSIT: { label: 'في الطريق', cls: 'bg-yellow-50 text-yellow-700' },
+            DELIVERED: { label: 'تم التسليم', cls: 'bg-emerald-100 text-emerald-700' },
+            CANCELLED: { label: 'ملغاة', cls: 'bg-red-50 text-red-600' },
+          };
+
+          const statuses = Object.keys(statusLabels);
+
+          function StatusBadge({ status }) {
+            const info = statusLabels[status] || { label: status, cls: 'bg-gray-100 text-gray-600' };
+            return (
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${info.cls}`}>
+                {info.label}
+              </span>
+            );
+          }
+
+          export default function TripsPage() {
+            const [items, setItems] = useState([]);
+            const [search, setSearch] = useState('');
+            const [statusFilter, setStatusFilter] = useState('');
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState('');
+
+            async function load() {
+              setLoading(true);
+              setError('');
+              try {
+                const params = new URLSearchParams();
+                if (search) params.set('search', search);
+                if (statusFilter) params.set('status', statusFilter);
+                const query = params.toString();
+                const res = await api.get(`/trips/${query ? `?${query}` : ''}`);
+                setItems(normalizeList(res.data));
+              } catch (err) {
+                setError(getErrorMessage(err));
+                setItems([]);
+              } finally {
+                setLoading(false);
+              }
+            }
+
+            useEffect(() => { load(); }, []);
+
+            // ✅ Auto-refresh كل 30 ثانية
+            useEffect(() => {
+              const interval = setInterval(load, 30000);
+              return () => clearInterval(interval);
+            }, []);
+
+            const stats = useMemo(() => {
+              const total = items.length;
+              const delivered = items.filter((t) => t.status === 'DELIVERED').length;
+              const inside = items.filter((t) =>
+                ['ENTERED_PORT', 'AT_BERTH', 'PASSED_CUSTOMS', 'IN_TRANSIT'].includes(t.status)
+              ).length;
+              const waiting = items.filter((t) =>
+                ['CREATED', 'BOOKED', 'APPROVED'].includes(t.status)
+              ).length;
+              return { total, delivered, inside, waiting };
+            }, [items]);
+
+            return (
+              <PageShell
+                title="الرحلات"
+                stats={[
+                  { label: 'الكل', value: stats.total, color: 'bg-blue-50 text-blue-600' },
+                  { label: 'في الانتظار', value: stats.waiting, color: 'bg-amber-50 text-amber-600' },
+                  { label: 'داخل الميناء', value: stats.inside, color: 'bg-violet-50 text-violet-600' },
+                  { label: 'تم التسليم', value: stats.delivered, color: 'bg-emerald-50 text-emerald-600' },
+                ]}
+                actions={
+                  <>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="border border-slate-200 rounded-2xl px-4 py-3 bg-white"
+                    >
+                      <option value="">كل الحالات</option>
+                      {statuses.map((s) => (
+                        <option key={s} value={s}>{statusLabels[s].label}</option>
+                      ))}
+                    </select>
+                    <input
+                      placeholder="بحث..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="border border-slate-200 rounded-2xl px-4 py-3 bg-white min-w-[280px]"
+                    />
+                    <button
+                      onClick={load}
+                      className="bg-blue-600 text-white px-5 py-3 rounded-2xl hover:bg-blue-700 transition flex items-center gap-2"
+                    >
+                      <RefreshCw size={16} />
+                      تحديث
+                    </button>
+                  </>
+                }
+              >
+                {error ? (
+                  <div className="bg-red-50 border border-red-100 text-red-600 rounded-2xl px-5 py-4 text-sm">
+                    {error}
+                  </div>
+                ) : null}
+
+                {loading ? (
+                  <LoadingCard />
+                ) : (
+                  <div className="bg-white rounded-3xl shadow-soft border border-slate-100 overflow-x-auto">
+                    <table className="w-full text-sm text-right">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-500 border-b border-slate-100">
+                          <th className="px-5 py-4 font-semibold">رمز الرحلة</th>
+                          <th className="px-5 py-4 font-semibold">رقم الحاوية</th>
+                          <th className="px-5 py-4 font-semibold">رقم الشاحنة</th>
+                          <th className="px-5 py-4 font-semibold">السائق</th>
+                          <th className="px-5 py-4 font-semibold">الوجهة</th>
+                          <th className="px-5 py-4 font-semibold">الموعد</th>
+                          <th className="px-5 py-4 font-semibold">الحالة</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.length ? (
+                          items.map((trip) => (
+                            <tr key={trip.id || trip.trip_code} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+                              <td className="px-5 py-4 font-mono text-xs text-blue-600">{String(trip.trip_code || '-').slice(0, 8)}...</td>
+                              <td className="px-5 py-4 font-semibold">{trip.container_no || '-'}</td>
+                              <td className="px-5 py-4">{trip.truck_plate || '-'}</td>
+                              <td className="px-5 py-4">{trip.driver_name || '-'}</td>
+                              <td className="px-5 py-4">{trip.destination || '-'}</td>
+                              <td className="px-5 py-4 text-slate-500">{trip.slot_label || '-'}</td>
+                              <td className="px-5 py-4">
+                                <StatusBadge status={trip.status} />
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="7" className="text-center text-slate-400 py-12">لا توجد رحلات.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </PageShell>
+            );
+          }
+          TRIPSEOF
+
+      - name: "📝 Commit improvements"
+        run: |
+          git config user.name "Masar Bot"
+          git config user.email "bot@masar.local"
+          git add -A
+          git commit -m "🎨 Improve Dashboard UI/UX
+
+          Fixes:
+          - Fix package.json syntax error (missing comma)
+          - Remove hardcoded credentials from LoginPage
+          - Remove 'admin' from allowed roles (only ops/port_admin)
+
+          Improvements:
+          - api.js: Add 401 auto-redirect to login
+          - api.js: Add normalizeList/getErrorMessage helpers
+          - api.js: Support VITE_API_BASE env variable
+          - App.jsx: Simplify routing with dynamic pages array
+          - LoginPage: Better validation and rate-limit handling
+          - TripsPage: Arabic status badges with colors
+          - TripsPage: Auto-refresh every 30 seconds
+          - TripsPage: Better table design and UX
+          - Version bump to 1.3.0
+          " || echo "No changes"
+          git push
+
+      - name: "✅ Done"
+        run: |
+          echo "🎉 Dashboard improvements applied!"
+          echo "Vercel will auto-deploy."
+
