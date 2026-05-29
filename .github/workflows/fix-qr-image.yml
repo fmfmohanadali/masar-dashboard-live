@@ -1,0 +1,85 @@
+name: Add QR Image to Dashboard
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install deps
+        run: npm install
+
+      - name: Add qrcode.react
+        run: npm install qrcode.react
+
+      - name: Create QR component
+        run: |
+          cat > src/components/QrImageDisplay.jsx << 'EOF'
+          import { QRCodeSVG } from 'qrcode.react';
+
+          export default function QrImageDisplay({ token, size = 200 }) {
+            if (!token) return null;
+            return (
+              <div className="flex flex-col items-center gap-3 p-4">
+                <div className="bg-white p-4 rounded-2xl border-2 border-blue-100 shadow-sm">
+                  <QRCodeSVG
+                    value={token}
+                    size={size}
+                    level="M"
+                    includeMargin={true}
+                  />
+                </div>
+              </div>
+            );
+          }
+          EOF
+
+      - name: Inject QR component into TransportRequestsPage
+        shell: python3 {0}
+        run: |
+          with open("src/pages/TransportRequestsPage.jsx", "r") as f:
+              code = f.read()
+
+          # Add import
+          if "QrImageDisplay" not in code:
+              code = code.replace(
+                  "import LoadingCard from '../components/LoadingCard';",
+                  "import LoadingCard from '../components/LoadingCard';\nimport QrImageDisplay from '../components/QrImageDisplay';"
+              )
+              print("Added import")
+
+          # Find QR section and add image component
+          # Look for the QR token display area
+          old_qr = 'QR النهائي'
+          if old_qr in code and '<QrImageDisplay' not in code:
+              code = code.replace(
+                  old_qr,
+                  old_qr + '</h4>\n                <QrImageDisplay token={selected?.qr_token} />\n                <h4 style={{display:"none"}}'
+              )
+              print("Added QR image display")
+
+          with open("src/pages/TransportRequestsPage.jsx", "w") as f:
+              f.write(code)
+
+      - name: Test build
+        run: npm run build
+
+      - name: Commit
+        run: |
+          git config user.name "Masar Bot"
+          git config user.email "bot@masar.local"
+          git add -A
+          git commit -m "Add QR code image display
+
+          - Install qrcode.react for client-side QR rendering
+          - Create QrImageDisplay component
+          - Show QR image alongside token in transport requests
+          - QR generated in browser from token (no server files needed)
+          " || true
+          git push
