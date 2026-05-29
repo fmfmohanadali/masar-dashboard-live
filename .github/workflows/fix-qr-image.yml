@@ -1,4 +1,4 @@
-name: Add QR Image to Dashboard
+name: Fix QR Image Display
 
 on:
   workflow_dispatch:
@@ -40,32 +40,60 @@ jobs:
           }
           EOF
 
-      - name: Inject QR component into TransportRequestsPage
+      - name: Fix TransportRequestsPage - proper injection
         shell: python3 {0}
         run: |
           with open("src/pages/TransportRequestsPage.jsx", "r") as f:
               code = f.read()
 
-          # Add import
-          if "QrImageDisplay" not in code:
+          # First revert bad changes from previous run
+          if '<h4 style={{display:"none"}}' in code:
               code = code.replace(
-                  "import LoadingCard from '../components/LoadingCard';",
-                  "import LoadingCard from '../components/LoadingCard';\nimport QrImageDisplay from '../components/QrImageDisplay';"
+                  '</h4>\n                <QrImageDisplay token={selected?.qr_token} />\n                <h4 style={{display:"none"}}',
+                  ''
               )
-              print("Added import")
+              print("Reverted bad injection")
 
-          # Find QR section and add image component
-          # Look for the QR token display area
-          old_qr = 'QR النهائي'
-          if old_qr in code and '<QrImageDisplay' not in code:
-              code = code.replace(
-                  old_qr,
-                  old_qr + '</h4>\n                <QrImageDisplay token={selected?.qr_token} />\n                <h4 style={{display:"none"}}'
-              )
-              print("Added QR image display")
+          # Remove duplicate import if exists
+          code = code.replace(
+              "import QrImageDisplay from '../components/QrImageDisplay';\n",
+              ""
+          )
+
+          # Add clean import
+          code = code.replace(
+              "import LoadingCard from '../components/LoadingCard';",
+              "import LoadingCard from '../components/LoadingCard';\nimport QrImageDisplay from '../components/QrImageDisplay';"
+          )
+
+          # Find the QR token display section and add image BEFORE the token text
+          # Look for the pattern where qr_token is shown
+          if "selected.qr_token" in code or "selected?.qr_token" in code:
+              # Find "QR النهائي" section
+              qr_marker = 'QR النهائي'
+              if qr_marker in code and '<QrImageDisplay' not in code:
+                  # Find the div that contains the QR section
+                  idx = code.find(qr_marker)
+                  # Go back to find the opening div/section
+                  # Find the line with qr_token text display
+                  lines = code.split('\n')
+                  for i, line in enumerate(lines):
+                      if qr_marker in line:
+                          # Insert QrImageDisplay component after this line's parent closes
+                          # Find the next line that has qr_token
+                          for j in range(i+1, min(i+10, len(lines))):
+                              if 'qr_token' in lines[j] and '<code' in lines[j]:
+                                  # Insert QR image before the code/text display
+                                  indent = '                '
+                                  lines.insert(j, f'{indent}<QrImageDisplay token={{selected?.qr_token}} />')
+                                  print(f"Inserted QrImageDisplay at line {j}")
+                                  break
+                          break
+                  code = '\n'.join(lines)
 
           with open("src/pages/TransportRequestsPage.jsx", "w") as f:
               f.write(code)
+          print("Done")
 
       - name: Test build
         run: npm run build
@@ -75,11 +103,5 @@ jobs:
           git config user.name "Masar Bot"
           git config user.email "bot@masar.local"
           git add -A
-          git commit -m "Add QR code image display
-
-          - Install qrcode.react for client-side QR rendering
-          - Create QrImageDisplay component
-          - Show QR image alongside token in transport requests
-          - QR generated in browser from token (no server files needed)
-          " || true
+          git commit -m "Add QR code image to transport requests" || true
           git push
