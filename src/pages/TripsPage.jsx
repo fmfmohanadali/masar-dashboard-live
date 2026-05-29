@@ -1,23 +1,35 @@
 import { useEffect, useMemo, useState } from 'react';
-
-import { api } from '../api';
+import { RefreshCw, Search } from 'lucide-react';
+import { api, normalizeList, getErrorMessage } from '../api';
 import PageShell from '../components/PageShell';
 import LoadingCard from '../components/LoadingCard';
 
-const statuses = [
-  'CREATED',
-  'BOOKED',
-  'APPROVED',
-  'ARRIVED_GATE',
-  'ENTERED_PORT',
-  'AT_BERTH',
-  'LOADING_COMPLETE',
-  'PASSED_CUSTOMS',
-  'EXITED_PORT',
-  'IN_TRANSIT',
-  'DELIVERED',
-  'CANCELLED',
-];
+// ✅ ترجمة الحالات بالعربي
+const statusLabels = {
+  CREATED: { label: 'تم الإنشاء', cls: 'bg-slate-100 text-slate-600' },
+  BOOKED: { label: 'محجوزة', cls: 'bg-blue-50 text-blue-600' },
+  APPROVED: { label: 'معتمدة', cls: 'bg-cyan-50 text-cyan-700' },
+  ARRIVED_GATE: { label: 'وصلت البوابة', cls: 'bg-amber-50 text-amber-600' },
+  ENTERED_PORT: { label: 'داخل الميناء', cls: 'bg-orange-50 text-orange-600' },
+  AT_BERTH: { label: 'في الرصيف', cls: 'bg-purple-50 text-purple-600' },
+  LOADING_COMPLETE: { label: 'اكتمل التحميل', cls: 'bg-indigo-50 text-indigo-600' },
+  PASSED_CUSTOMS: { label: 'اجتازت الجمارك', cls: 'bg-teal-50 text-teal-600' },
+  EXITED_PORT: { label: 'خرجت من الميناء', cls: 'bg-lime-50 text-lime-700' },
+  IN_TRANSIT: { label: 'في الطريق', cls: 'bg-yellow-50 text-yellow-700' },
+  DELIVERED: { label: 'تم التسليم', cls: 'bg-emerald-100 text-emerald-700' },
+  CANCELLED: { label: 'ملغاة', cls: 'bg-red-50 text-red-600' },
+};
+
+const statuses = Object.keys(statusLabels);
+
+function StatusBadge({ status }) {
+  const info = statusLabels[status] || { label: status, cls: 'bg-gray-100 text-gray-600' };
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${info.cls}`}>
+      {info.label}
+    </span>
+  );
+}
 
 export default function TripsPage() {
   const [items, setItems] = useState([]);
@@ -29,34 +41,27 @@ export default function TripsPage() {
   async function load() {
     setLoading(true);
     setError('');
-
     try {
       const params = new URLSearchParams();
-
       if (search) params.set('search', search);
       if (statusFilter) params.set('status', statusFilter);
-
       const query = params.toString();
       const res = await api.get(`/trips/${query ? `?${query}` : ''}`);
-
-      const data = Array.isArray(res.data?.results)
-        ? res.data.results
-        : Array.isArray(res.data)
-        ? res.data
-        : [];
-
-      setItems(data);
+      setItems(normalizeList(res.data));
     } catch (err) {
-      setError(err?.response?.data?.detail || 'تعذر تحميل الرحلات');
+      setError(getErrorMessage(err));
       setItems([]);
     } finally {
       setLoading(false);
     }
   }
 
+  useEffect(() => { load(); }, []);
+
+  // ✅ Auto-refresh كل 30 ثانية
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const interval = setInterval(load, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const stats = useMemo(() => {
@@ -68,15 +73,18 @@ export default function TripsPage() {
     const waiting = items.filter((t) =>
       ['CREATED', 'BOOKED', 'APPROVED'].includes(t.status)
     ).length;
-
     return { total, delivered, inside, waiting };
   }, [items]);
 
   return (
     <PageShell
       title="الرحلات"
-      subtitle="عرض وإدارة الرحلات الحالية"
-      hideTitle
+      stats={[
+        { label: 'الكل', value: stats.total, color: 'bg-blue-50 text-blue-600' },
+        { label: 'في الانتظار', value: stats.waiting, color: 'bg-amber-50 text-amber-600' },
+        { label: 'داخل الميناء', value: stats.inside, color: 'bg-violet-50 text-violet-600' },
+        { label: 'تم التسليم', value: stats.delivered, color: 'bg-emerald-50 text-emerald-600' },
+      ]}
       actions={
         <>
           <select
@@ -85,81 +93,66 @@ export default function TripsPage() {
             className="border border-slate-200 rounded-2xl px-4 py-3 bg-white"
           >
             <option value="">كل الحالات</option>
-            {statuses.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
+            {statuses.map((s) => (
+              <option key={s} value={s}>{statusLabels[s].label}</option>
             ))}
           </select>
-
           <input
-            placeholder="ابحث برقم الحاوية / الشاحنة / السائق"
+            placeholder="بحث..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border border-slate-200 rounded-2xl px-4 py-3 bg-white min-w-[280px]"
           />
-
           <button
             onClick={load}
-            className="bg-brand text-white px-4 py-3 rounded-2xl"
+            className="bg-blue-600 text-white px-5 py-3 rounded-2xl hover:bg-blue-700 transition flex items-center gap-2"
           >
+            <RefreshCw size={16} />
             تحديث
           </button>
         </>
       }
     >
       {error ? (
-        <div className="bg-red-50 border border-red-100 text-red-700 rounded-2xl px-4 py-3 text-sm">
+        <div className="bg-red-50 border border-red-100 text-red-600 rounded-2xl px-5 py-4 text-sm">
           {error}
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-        <MiniStat label="كل الرحلات" value={stats.total} color="text-slate-900" />
-        <MiniStat label="في الانتظار" value={stats.waiting} color="text-amber-600" />
-        <MiniStat label="داخل الميناء" value={stats.inside} color="text-blue-600" />
-        <MiniStat label="تم التسليم" value={stats.delivered} color="text-emerald-600" />
-      </div>
-
       {loading ? (
-        <LoadingCard text="جاري تحميل الرحلات..." />
+        <LoadingCard />
       ) : (
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100 overflow-x-auto">
-          <table className="min-w-full text-sm">
+        <div className="bg-white rounded-3xl shadow-soft border border-slate-100 overflow-x-auto">
+          <table className="w-full text-sm text-right">
             <thead>
-              <tr className="text-slate-400 border-b border-slate-100">
-                <th className="text-right py-3 px-2 font-medium">الحالة</th>
-                <th className="text-right py-3 px-2 font-medium">الموعد</th>
-                <th className="text-right py-3 px-2 font-medium">الوجهة</th>
-                <th className="text-right py-3 px-2 font-medium">السائق</th>
-                <th className="text-right py-3 px-2 font-medium">رقم الشاحنة</th>
-                <th className="text-right py-3 px-2 font-medium">رقم الحاوية</th>
-                <th className="text-right py-3 px-2 font-medium">رمز الرحلة</th>
+              <tr className="bg-slate-50 text-slate-500 border-b border-slate-100">
+                <th className="px-5 py-4 font-semibold">رمز الرحلة</th>
+                <th className="px-5 py-4 font-semibold">رقم الحاوية</th>
+                <th className="px-5 py-4 font-semibold">رقم الشاحنة</th>
+                <th className="px-5 py-4 font-semibold">السائق</th>
+                <th className="px-5 py-4 font-semibold">الوجهة</th>
+                <th className="px-5 py-4 font-semibold">الموعد</th>
+                <th className="px-5 py-4 font-semibold">الحالة</th>
               </tr>
             </thead>
-
             <tbody>
               {items.length ? (
                 items.map((trip) => (
-                  <tr key={trip.id || trip.trip_code} className="border-b last:border-b-0 border-slate-100 text-slate-700">
-                    <td className="py-3 px-2">
-                      <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                        {trip.status || '-'}
-                      </span>
+                  <tr key={trip.id || trip.trip_code} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+                    <td className="px-5 py-4 font-mono text-xs text-blue-600">{String(trip.trip_code || '-').slice(0, 8)}...</td>
+                    <td className="px-5 py-4 font-semibold">{trip.container_no || '-'}</td>
+                    <td className="px-5 py-4">{trip.truck_plate || '-'}</td>
+                    <td className="px-5 py-4">{trip.driver_name || '-'}</td>
+                    <td className="px-5 py-4">{trip.destination || '-'}</td>
+                    <td className="px-5 py-4 text-slate-500">{trip.slot_label || '-'}</td>
+                    <td className="px-5 py-4">
+                      <StatusBadge status={trip.status} />
                     </td>
-                    <td className="py-3 px-2">{trip.slot_label || '-'}</td>
-                    <td className="py-3 px-2">{trip.destination || '-'}</td>
-                    <td className="py-3 px-2">{trip.driver_name || '-'}</td>
-                    <td className="py-3 px-2">{trip.truck_plate || '-'}</td>
-                    <td className="py-3 px-2">{trip.container_no || '-'}</td>
-                    <td className="py-3 px-2 font-medium">{trip.trip_code || '-'}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="py-6 text-center text-slate-400">
-                    لا توجد رحلات.
-                  </td>
+                  <td colSpan="7" className="text-center text-slate-400 py-12">لا توجد رحلات.</td>
                 </tr>
               )}
             </tbody>
@@ -167,14 +160,5 @@ export default function TripsPage() {
         </div>
       )}
     </PageShell>
-  );
-}
-
-function MiniStat({ label, value, color }) {
-  return (
-    <div className="bg-white rounded-[22px] p-5 shadow-soft border border-slate-100">
-      <div className="text-sm text-slate-500 mb-2">{label}</div>
-      <div className={`text-4xl font-black ${color}`}>{value}</div>
-    </div>
   );
 }

@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
 import { logoutRequest } from './api';
@@ -8,7 +7,6 @@ import { logoutRequest } from './api';
 export default function App() {
   const [user, setUser] = useState(() => {
     const raw = localStorage.getItem('masar_user');
-
     try {
       return raw ? JSON.parse(raw) : null;
     } catch {
@@ -40,8 +38,9 @@ export default function App() {
     );
   }
 
-  const allowedRoles = ['ops', 'port_admin', 'admin'];
-  const isAllowed = allowedRoles.includes(role);
+  // ✅ الأدوار المسموحة
+  const allowedRoles = ['ops', 'port_admin'];
+  const isAllowed = allowedRoles.includes(role) || user.is_staff;
 
   if (!isAllowed) {
     return (
@@ -50,13 +49,11 @@ export default function App() {
           <h1 className="text-2xl font-bold text-slate-800 mb-3">
             غير مسموح بالدخول
           </h1>
-
           <p className="text-slate-500 mb-6 leading-7">
             هذه اللوحة مخصصة فقط لأدوار الإدارة والتشغيل:
             <br />
-            ops / port_admin
+            <span className="font-mono text-sm">ops / port_admin</span>
           </p>
-
           <button
             onClick={handleLogout}
             className="bg-blue-600 text-white px-5 py-3 rounded-2xl hover:bg-blue-700 transition"
@@ -68,65 +65,23 @@ export default function App() {
     );
   }
 
+  // ✅ تبسيط الـ routes - كل route يمر من DashboardPage
+  const pages = [
+    'dashboard', 'bookings', 'trips', 'transport-requests',
+    'containers', 'trucks', 'ships', 'checkpoints',
+    'reports', 'users', 'settings'
+  ];
+
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-      <Route
-        path="/dashboard"
-        element={<DashboardPage user={user} onLogout={handleLogout} />}
-      />
-
-      <Route
-        path="/bookings"
-        element={<DashboardPage user={user} onLogout={handleLogout} />}
-      />
-
-      <Route
-        path="/trips"
-        element={<DashboardPage user={user} onLogout={handleLogout} />}
-      />
-
-      <Route
-        path="/transport-requests"
-        element={<DashboardPage user={user} onLogout={handleLogout} />}
-      />
-
-      <Route
-        path="/containers"
-        element={<DashboardPage user={user} onLogout={handleLogout} />}
-      />
-
-      <Route
-        path="/trucks"
-        element={<DashboardPage user={user} onLogout={handleLogout} />}
-      />
-
-      <Route
-        path="/ships"
-        element={<DashboardPage user={user} onLogout={handleLogout} />}
-      />
-
-      <Route
-        path="/checkpoints"
-        element={<DashboardPage user={user} onLogout={handleLogout} />}
-      />
-
-      <Route
-        path="/reports"
-        element={<DashboardPage user={user} onLogout={handleLogout} />}
-      />
-
-      <Route
-        path="/users"
-        element={<DashboardPage user={user} onLogout={handleLogout} />}
-      />
-
-      <Route
-        path="/settings"
-        element={<DashboardPage user={user} onLogout={handleLogout} />}
-      />
-
+      {pages.map((page) => (
+        <Route
+          key={page}
+          path={`/${page}`}
+          element={<DashboardPage user={user} onLogout={handleLogout} />}
+        />
+      ))}
       <Route path="/login" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

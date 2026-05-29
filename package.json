@@ -1,11 +1,11 @@
 {
   "name": "masar-dashboard-live",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node ./node_modules/vite/bin/vite.js build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
