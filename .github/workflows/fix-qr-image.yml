@@ -1,4 +1,4 @@
-name: Show QR Image in Dashboard
+name: Add QR download button
 
 on:
   workflow_dispatch:
@@ -12,69 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: npm install
-      - run: npm install qrcode.react
+      - run: npm install qrcode
 
-      - name: Create QR component
-        run: |
-          cat > src/components/QrImageDisplay.jsx << 'EOF'
-          import { QRCodeSVG } from 'qrcode.react';
-
-          export default function QrImageDisplay({ token, size = 200 }) {
-            if (!token) return null;
-            return (
-              <div className="flex flex-col items-center gap-3 p-4">
-                <div className="bg-white p-4 rounded-2xl border-2 border-blue-100 shadow-sm">
-                  <QRCodeSVG value={token} size={size} level="M" includeMargin />
-                </div>
-              </div>
-            );
-          }
-          EOF
-
-      - name: Revert bad JSX changes and add QR properly
-        shell: python3 {0}
-        run: |
-          with open("src/pages/TransportRequestsPage.jsx", "r") as f:
-              lines = f.readlines()
-
-          # Step 1: Ensure import exists (only once)
-          has_import = any("QrImageDisplay" in l for l in lines)
-          if not has_import:
-              for i, line in enumerate(lines):
-                  if "import LoadingCard" in line:
-                      lines.insert(i + 1, "import QrImageDisplay from '../components/QrImageDisplay';\n")
-                      break
-
-          # Step 2: Find the QR token display area and add image
-          # Look for the line that contains "QR النهائي" heading
-          # and add <QrImageDisplay> right after it (before the token text)
-          already_has_component = any("<QrImageDisplay" in l for l in lines)
-
-          if not already_has_component:
-              for i, line in enumerate(lines):
-                  if "QR النهائي" in line:
-                      # Find the next few lines for the token code/text area
-                      # Insert QR image component after the heading closes
-                      for j in range(i + 1, min(i + 8, len(lines))):
-                          stripped = lines[j].strip()
-                          # Find a line that starts a code/pre or contains qr_token
-                          if "qr_token" in stripped or "<code" in stripped or "<pre" in stripped:
-                              indent = "                "
-                              lines.insert(j, f"{indent}<QrImageDisplay token={{selected?.qr_token}} />\n")
-                              print(f"Inserted QrImageDisplay at line {j + 1}")
-                              break
-                      break
-
-          # Step 3: Fix error message extraction
-          result = "".join(lines)
-          result = result.replace(
-              "err?.response?.data?.detail || 'تعذر تنفيذ الإجراء'",
-              "err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.detail || 'تعذر تنفيذ الإجراء'"
-          )
-
-          with open("src/pages/TransportRequestsPage.jsx", "w") as f:
-              f.write(result)
-          print("Done")
+      - name: Apply patch
+        run: echo "aW1wb3J0IHJlCgp3aXRoIG9wZW4oInNyYy9wYWdlcy9UcmFuc3BvcnRSZXF1ZXN0c1BhZ2UuanN4IiwgInIiKSBhcyBmOgogICAgY29kZSA9IGYucmVhZCgpCgppZiAiaW1wb3J0IFFSQ29kZSBmcm9tIiBub3QgaW4gY29kZToKICAgIGNvZGUgPSBjb2RlLnJlcGxhY2UoImltcG9ydCB7IGFwaSB9IGZyb20gJy4uL2FwaSc7IiwgImltcG9ydCB7IGFwaSB9IGZyb20gJy4uL2FwaSc7XG5pbXBvcnQgUVJDb2RlIGZyb20gJ3FyY29kZSc7IikKCmlmICJEb3dubG9hZCwiIG5vdCBpbiBjb2RlOgogICAgY29kZSA9IGNvZGUucmVwbGFjZSgiQ29weSwiLCAiQ29weSxcbiAgRG93bmxvYWQsIikKCmlmICJpbXBvcnQgUmVhY3QiIG5vdCBpbiBjb2RlOgogICAgY29kZSA9ICJpbXBvcnQgUmVhY3QgZnJvbSAncmVhY3QnO1xuIiArIGNvZGUKCm9sZF9zdGFydCA9ICJmdW5jdGlvbiBRclBhbmVsKHsgaXRlbSwgb25Db3B5IH0pIHsiCm9sZF9lbmQgPSAifVxuXG4vKiA9PT09PT09PT09PT09PT09PT09PT09PT09IgpzdGFydF9pZHggPSBjb2RlLmZpbmQob2xkX3N0YXJ0KQplbmRfaWR4ID0gY29kZS5maW5kKG9sZF9lbmQsIHN0YXJ0X2lkeCkKCmlmIHN0YXJ0X2lkeCA+IDAgYW5kIGVuZF9pZHggPiBzdGFydF9pZHg6CiAgICBuZXdfcGFuZWwgPSAnZnVuY3Rpb24gUXJQYW5lbCh7IGl0ZW0sIG9uQ29weSB9KSB7XG4gIGlmICghaXRlbS5xcl90b2tlbikgcmV0dXJuIG51bGw7XG5cbiAgYXN5bmMgZnVuY3Rpb24gZG93bmxvYWRRcigpIHtcbiAgICB0cnkge1xuICAgICAgY29uc3QgdXJsID0gYXdhaXQgUVJDb2RlLnRvRGF0YVVSTChpdGVtLnFyX3Rva2VuLCB7XG4gICAgICAgIHdpZHRoOiA0MDAsIG1hcmdpbjogMixcbiAgICAgICAgY29sb3I6IHsgZGFyazogXCcjMDAwMDAwXCcsIGxpZ2h0OiBcJyNmZmZmZmZcJyB9LFxuICAgICAgfSk7XG4gICAgICBjb25zdCBsaW5rID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudChcJ2FcJyk7XG4gICAgICBsaW5rLmRvd25sb2FkID0gXCdxci1cJyArIChpdGVtLmNvbnRhaW5lcl9ubyB8fCBcJ2NvZGVcJykgKyBcJy5wbmdcJztcbiAgICAgIGxpbmsuaHJlZiA9IHVybDtcbiAgICAgIGxpbmsuY2xpY2soKTtcbiAgICB9IGNhdGNoIChlKSB7XG4gICAgICBjb25zb2xlLmVycm9yKFwnUVIgZXJyb3I6XCcsIGUpO1xuICAgIH1cbiAgfVxuXG4gIGNvbnN0IFtxclVybCwgc2V0UXJVcmxdID0gUmVhY3QudXNlU3RhdGUoXCdcJyk7XG4gIFJlYWN0LnVzZUVmZmVjdCgoKSA9PiB7XG4gICAgUVJDb2RlLnRvRGF0YVVSTChpdGVtLnFyX3Rva2VuLCB7IHdpZHRoOiAyODAsIG1hcmdpbjogMiB9KVxuICAgICAgLnRoZW4oc2V0UXJVcmwpLmNhdGNoKCgpID0+IHt9KTtcbiAgfSwgW2l0ZW0ucXJfdG9rZW5dKTtcblxuICByZXR1cm4gKFxuICAgIDxkaXYgY2xhc3NOYW1lPSJiZy1lbWVyYWxkLTUwIGJvcmRlciBib3JkZXItZW1lcmFsZC0xMDAgcm91bmRlZC0yeGwgcC00Ij5cbiAgICAgIDxkaXYgY2xhc3NOYW1lPSJmbGV4IGl0ZW1zLWNlbnRlciBnYXAtMiB0ZXh0LWVtZXJhbGQtNzAwIGZvbnQtYm9sZCBtYi0yIj5cbiAgICAgICAgPFFyQ29kZSBzaXplPXsxOH0gLz5cbiAgICAgICAgUVIgXHUwNjI3XHUwNjQ0XHUwNjQ2XHUwNjQ3XHUwNjI3XHUwNjI2XHUwNjRhXG4gICAgICA8L2Rpdj5cblxuICAgICAge3FyVXJsICYmIChcbiAgICAgICAgPGRpdiBjbGFzc05hbWU9ImZsZXgganVzdGlmeS1jZW50ZXIgbWItMyI+XG4gICAgICAgICAgPGltZyBzcmM9e3FyVXJsfSBhbHQ9IlFSIiBjbGFzc05hbWU9InJvdW5kZWQteGwgYm9yZGVyLTIgYm9yZGVyLWVtZXJhbGQtMjAwIiBzdHlsZT17eyB3aWR0aDogMjIwLCBoZWlnaHQ6IDIyMCB9fSAvPlxuICAgICAgICA8L2Rpdj5cbiAgICAgICl9XG5cbiAgICAgIDxjb2RlIGNsYXNzTmFtZT0iYmxvY2sgdGV4dC14cyB0ZXh0LXNsYXRlLTcwMCBicmVhay1hbGwgYmctd2hpdGUgcm91bmRlZC14bCBwLTMgYm9yZGVyIGJvcmRlci1lbWVyYWxkLTEwMCI+XG4gICAgICAgIHtpdGVtLnFyX3Rva2VufVxuICAgICAgPC9jb2RlPlxuXG4gICAgICA8ZGl2IGNsYXNzTmFtZT0iZmxleCBnYXAtMiBtdC0zIj5cbiAgICAgICAgPGJ1dHRvbiB0eXBlPSJidXR0b24iIG9uQ2xpY2s9eygpID0+IG9uQ29weShpdGVtLnFyX3Rva2VuKX0gY2xhc3NOYW1lPSJidG4tcHJpbWFyeSBmbGV4LTEiPlxuICAgICAgICAgIDxDb3B5IHNpemU9ezE1fSAvPlxuICAgICAgICAgIFx1MDY0Nlx1MDYzM1x1MDYyZSBcdTA2MjdcdTA2NDRcdTA2MmFcdTA2NDhcdTA2NDNcdTA2NDZcbiAgICAgICAgPC9idXR0b24+XG4gICAgICAgIDxidXR0b24gdHlwZT0iYnV0dG9uIiBvbkNsaWNrPXtkb3dubG9hZFFyfSBjbGFzc05hbWU9ImZsZXgtMSBmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWNlbnRlciBnYXAtMiBiZy1lbWVyYWxkLTYwMCB0ZXh0LXdoaXRlIHJvdW5kZWQtMnhsIHB5LTMgZm9udC1zZW1pYm9sZCBob3ZlcjpiZy1lbWVyYWxkLTcwMCB0cmFuc2l0aW9uIj5cbiAgICAgICAgICA8RG93bmxvYWQgc2l6ZT17MTV9IC8+XG4gICAgICAgICAgXHUwNjJhXHUwNjQ2XHUwNjMyXHUwNjRhXHUwNjQ0IFFSXG4gICAgICAgIDwvYnV0dG9uPlxuICAgICAgPC9kaXY+XG4gICAgPC9kaXY+XG4gICk7XG59JwogICAgY29kZSA9IGNvZGVbOnN0YXJ0X2lkeF0gKyBuZXdfcGFuZWwgKyAiXG5cbiIgKyBjb2RlW2VuZF9pZHg6XQogICAgcHJpbnQoIlJlcGxhY2VkIFFyUGFuZWwiKQoKd2l0aCBvcGVuKCJzcmMvcGFnZXMvVHJhbnNwb3J0UmVxdWVzdHNQYWdlLmpzeCIsICJ3IikgYXMgZjoKICAgIGYud3JpdGUoY29kZSkK" | base64 -d | python3 -
 
       - name: Build test
         run: npm run build
@@ -84,5 +25,5 @@ jobs:
           git config user.name "Masar Bot"
           git config user.email "bot@masar.local"
           git add -A
-          git commit -m "Add QR image display + fix error messages" || true
+          git commit -m "Add QR image and download button" || true
           git push
