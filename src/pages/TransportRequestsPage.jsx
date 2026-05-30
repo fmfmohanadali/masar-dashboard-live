@@ -272,7 +272,7 @@ export default function TransportRequestsPage() {
       setNotice('تم تنفيذ الإجراء بنجاح');
       await load();
     } catch (err) {
-      setError(err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.detail || 'تعذر تنفيذ الإجراء');
+      setError(err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.detail || 'تعذر تنفيذ الإجراء');
     } finally {
       setSaving(false);
     }
