@@ -20,7 +20,6 @@ import {
 import { api } from '../api';
 import PageShell from '../components/PageShell';
 import LoadingCard from '../components/LoadingCard';
-import QrImageDisplay from '../components/QrImageDisplay';
 
 /* =========================
    Status & Flow Definitions
@@ -151,7 +150,7 @@ export default function TransportRequestsPage() {
         setSlots(normalizeList(slotsRes.value.data));
       }
     } catch (err) {
-      setError(err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.detail || 'تعذر تحميل بيانات طلبات النقل');
+      setError(err?.response?.data?.detail || 'تعذر تحميل بيانات طلبات النقل');
       setItems([]);
     } finally {
       setLoading(false);
@@ -253,7 +252,7 @@ export default function TransportRequestsPage() {
       setNotice('تم إنشاء طلب النقل بنجاح');
       await load();
     } catch (err) {
-      setError(err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.detail || 'تعذر إنشاء طلب النقل');
+      setError(err?.response?.data?.detail || 'تعذر إنشاء طلب النقل');
     } finally {
       setSaving(false);
     }
@@ -272,7 +271,7 @@ export default function TransportRequestsPage() {
       setNotice('تم تنفيذ الإجراء بنجاح');
       await load();
     } catch (err) {
-      setError(err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.detail || 'تعذر تنفيذ الإجراء');
+      setError(err?.response?.data?.detail || 'تعذر تنفيذ الإجراء');
     } finally {
       setSaving(false);
     }
@@ -308,7 +307,7 @@ export default function TransportRequestsPage() {
       setNotice('تم إضافة العرض بنجاح');
       await load();
     } catch (err) {
-      setError(err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.detail || 'تعذر إضافة العرض');
+      setError(err?.response?.data?.detail || 'تعذر إضافة العرض');
     } finally {
       setSaving(false);
     }
@@ -1125,7 +1124,6 @@ function QrPanel({ item, onCopy }) {
         QR النهائي
       </div>
 
-                <QrImageDisplay token={selected?.qr_token} />
       <code className="block text-xs text-slate-700 break-all bg-white rounded-xl p-3 border border-emerald-100">
         {item.qr_token}
       </code>
@@ -1316,4 +1314,4 @@ function cleanPayload(payload) {
   });
 
   return output;
-}
+          }
