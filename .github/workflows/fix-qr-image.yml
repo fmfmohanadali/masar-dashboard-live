@@ -1,4 +1,4 @@
-name: Fix error messages and QR display
+name: Show QR Image in Dashboard
 
 on:
   workflow_dispatch:
@@ -11,58 +11,78 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - run: npm install
+      - run: npm install qrcode.react
 
-      - name: Install deps
-        run: npm install
+      - name: Create QR component
+        run: |
+          cat > src/components/QrImageDisplay.jsx << 'EOF'
+          import { QRCodeSVG } from 'qrcode.react';
 
-      - name: Fix error handling in TransportRequestsPage
+          export default function QrImageDisplay({ token, size = 200 }) {
+            if (!token) return null;
+            return (
+              <div className="flex flex-col items-center gap-3 p-4">
+                <div className="bg-white p-4 rounded-2xl border-2 border-blue-100 shadow-sm">
+                  <QRCodeSVG value={token} size={size} level="M" includeMargin />
+                </div>
+              </div>
+            );
+          }
+          EOF
+
+      - name: Revert bad JSX changes and add QR properly
         shell: python3 {0}
         run: |
           with open("src/pages/TransportRequestsPage.jsx", "r") as f:
-              code = f.read()
+              lines = f.readlines()
 
-          # Fix all error message extraction to handle new API format
-          # Old: err?.response?.data?.detail || 'message'
-          # New: err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.detail || 'message'
+          # Step 1: Ensure import exists (only once)
+          has_import = any("QrImageDisplay" in l for l in lines)
+          if not has_import:
+              for i, line in enumerate(lines):
+                  if "import LoadingCard" in line:
+                      lines.insert(i + 1, "import QrImageDisplay from '../components/QrImageDisplay';\n")
+                      break
 
-          old_patterns = [
+          # Step 2: Find the QR token display area and add image
+          # Look for the line that contains "QR النهائي" heading
+          # and add <QrImageDisplay> right after it (before the token text)
+          already_has_component = any("<QrImageDisplay" in l for l in lines)
+
+          if not already_has_component:
+              for i, line in enumerate(lines):
+                  if "QR النهائي" in line:
+                      # Find the next few lines for the token code/text area
+                      # Insert QR image component after the heading closes
+                      for j in range(i + 1, min(i + 8, len(lines))):
+                          stripped = lines[j].strip()
+                          # Find a line that starts a code/pre or contains qr_token
+                          if "qr_token" in stripped or "<code" in stripped or "<pre" in stripped:
+                              indent = "                "
+                              lines.insert(j, f"{indent}<QrImageDisplay token={{selected?.qr_token}} />\n")
+                              print(f"Inserted QrImageDisplay at line {j + 1}")
+                              break
+                      break
+
+          # Step 3: Fix error message extraction
+          result = "".join(lines)
+          result = result.replace(
               "err?.response?.data?.detail || 'تعذر تنفيذ الإجراء'",
-              "err?.response?.data?.detail || 'تعذر إنشاء طلب النقل'",
-              "err?.response?.data?.detail || 'تعذر إضافة العرض'",
-              "err?.response?.data?.detail || 'تعذر تحميل بيانات طلبات النقل'",
-              "err?.response?.data?.detail || 'تعذر تحميل طلبات النقل'",
-          ]
-
-          for old in old_patterns:
-              fallback = old.split("|| '")[1].rstrip("'")
-              new = f"err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.detail || '{fallback}'"
-              if old in code:
-                  code = code.replace(old, new)
-                  print(f"Fixed: {fallback}")
+              "err?.response?.data?.errors?.detail || err?.response?.data?.message || err?.response?.data?.detail || 'تعذر تنفيذ الإجراء'"
+          )
 
           with open("src/pages/TransportRequestsPage.jsx", "w") as f:
-              f.write(code)
-          print("Done fixing error messages")
+              f.write(result)
+          print("Done")
 
-      - name: Test build
-        run: |
-          npm run build
+      - name: Build test
+        run: npm run build
 
       - name: Commit
         run: |
           git config user.name "Masar Bot"
           git config user.email "bot@masar.local"
           git add -A
-          git commit -m "Fix error message extraction for new API format
-
-          The backend now returns errors in this format:
-          { success: false, errors: { detail: '...' }, message: '...' }
-
-          Updated all error handlers to check:
-          1. err.response.data.errors.detail (new format)
-          2. err.response.data.message (new format)
-          3. err.response.data.detail (old format)
-          4. fallback message
-          " || true
+          git commit -m "Add QR image display + fix error messages" || true
           git push
-
