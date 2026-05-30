@@ -27,3 +27,4 @@ jobs:
           git add -A
           git commit -m "Add QR image and download button" || true
           git push
+ 
