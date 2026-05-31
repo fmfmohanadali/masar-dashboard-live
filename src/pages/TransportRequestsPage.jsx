@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Plus,
@@ -11,6 +12,7 @@ import {
   QrCode,
   X,
   Copy,
+  Download,
   BadgeCheck,
   Building2,
   UserRound,
@@ -18,6 +20,7 @@ import {
 } from 'lucide-react';
 
 import { api } from '../api';
+import QRCode from 'qrcode';
 import PageShell from '../components/PageShell';
 import LoadingCard from '../components/LoadingCard';
 
@@ -681,6 +684,7 @@ function RequestDetails({
   onBookSlot,
   onIssueQr,
   onCopy,
+  Download,
 }) {
   if (!item) {
     return (
@@ -1117,6 +1121,22 @@ function SlotPanel({
 function QrPanel({ item, onCopy }) {
   if (!item.qr_token) return null;
 
+  const [qrUrl, setQrUrl] = React.useState('');
+  React.useEffect(() => {
+    QRCode.toDataURL(item.qr_token, { width: 280, margin: 2 })
+      .then(setQrUrl).catch(() => {});
+  }, [item.qr_token]);
+
+  async function downloadQr() {
+    try {
+      const url = await QRCode.toDataURL(item.qr_token, { width: 400, margin: 2 });
+      const a = document.createElement('a');
+      a.download = 'qr-' + (item.container_no || 'code') + '.png';
+      a.href = url;
+      a.click();
+    } catch (e) { console.error(e); }
+  }
+
   return (
     <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
       <div className="flex items-center gap-2 text-emerald-700 font-bold mb-2">
@@ -1124,18 +1144,26 @@ function QrPanel({ item, onCopy }) {
         QR النهائي
       </div>
 
+      {qrUrl && (
+        <div className="flex justify-center mb-3">
+          <img src={qrUrl} alt="QR" className="rounded-xl border-2 border-emerald-200" style={{ width: 220, height: 220 }} />
+        </div>
+      )}
+
       <code className="block text-xs text-slate-700 break-all bg-white rounded-xl p-3 border border-emerald-100">
         {item.qr_token}
       </code>
 
-      <button
-        type="button"
-        onClick={() => onCopy(item.qr_token)}
-        className="btn-primary mt-3"
-      >
-        <Copy size={15} />
-        نسخ التوكن
-      </button>
+      <div className="flex gap-2 mt-3">
+        <button type="button" onClick={() => onCopy(item.qr_token)} className="btn-primary flex-1">
+          <Copy size={15} />
+          نسخ التوكن
+        </button>
+        <button type="button" onClick={downloadQr} className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white rounded-2xl py-3 font-semibold hover:bg-emerald-700 transition">
+          <Download size={15} />
+          تنزيل QR
+        </button>
+      </div>
     </div>
   );
 }
